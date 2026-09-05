@@ -61,6 +61,15 @@ re-check the `color` beside it. The current palette removes the trap at the
 source: `--accent` is legal in both directions, so there is no text/fill pair to
 cross.
 
+**A `Draggable` with `eventData` needs `eventReceive` to discard FC's copy.**
+FullCalendar mints its own event for an external drop whenever the Draggable
+supplies `eventData`. `drop:` already writes the stop to the store, which
+re-renders it — so the stop existed twice, FC treated the pair as concurrent
+events, and laid them side by side at half width. The store is the single
+source of truth; `eventReceive: (info) => info.event.remove()` throws FC's
+duplicate away. Symptom to recognise: a dragged-in stop appears as two
+half-width events, and `.fc-v-event` count exceeds the scheduled-stop count.
+
 **The optimiser's day starts at the day's first stop, not at 08:00.**
 `optimize()` and `plan()` default `dayStart` to `DAY_START_MIN`, which dragged a
 10am-to-4pm day back two hours purely because the window allowed it. `app.js`'s

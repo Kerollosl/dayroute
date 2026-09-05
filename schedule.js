@@ -100,6 +100,15 @@ export class Schedule {
         info.draggedEl.remove();
       },
 
+      // The Draggable supplies eventData, so FullCalendar ALSO mints its own
+      // event for the drop — on top of the store-backed one `drop` above just
+      // created. Two events at the same time are concurrent, so FC laid them
+      // out side by side at half width each and the stop appeared twice.
+      // The store is the single source of truth; discard FC's copy.
+      eventReceive: (info) => {
+        info.event.remove();
+      },
+
       eventMouseEnter: (info) => {
         self.hoverId = info.event.extendedProps.stopId;
         self.onHoverStop?.(self.hoverId);
