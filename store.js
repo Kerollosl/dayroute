@@ -43,7 +43,7 @@ export const fmtMiles = (m) => {
   return mi >= 100 ? String(Math.round(mi)) : mi.toFixed(1).replace(/\.0$/, '');
 };
 
-const blank = () => ({ day: todayISO(), stops: [], origin: null, originAsked: false });
+const blank = () => ({ day: todayISO(), stops: [], origin: null });
 
 function migrate(raw) {
   if (!raw || typeof raw !== 'object' || !Array.isArray(raw.stops)) return blank();
@@ -62,7 +62,6 @@ function migrate(raw) {
           source: o.source === 'geo' ? 'geo' : 'manual',
         }
       : null,
-    originAsked: !!raw.originAsked,
     stops: raw.stops.filter(Boolean).map((s) => ({
       id: s.id || uid(),
       name: String(s.name ?? '').slice(0, 200),
@@ -139,7 +138,6 @@ export class Store extends EventTarget {
   get day() { return this.state.day; }
   get stops() { return this.state.stops; }
   get origin() { return this.state.origin; }
-  get originAsked() { return this.state.originAsked; }
 
   /**
    * Set or clear the day's starting point. `null` clears it, which returns the
@@ -158,11 +156,6 @@ export class Store extends EventTarget {
     this.commit();
   }
 
-  /** Remember that we already asked the browser for a position, so we ask once. */
-  markOriginAsked() {
-    this.state.originAsked = true;
-    this.save();
-  }
 
   byId(id) { return this.state.stops.find((s) => s.id === id) || null; }
 

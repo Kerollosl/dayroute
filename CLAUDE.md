@@ -78,6 +78,27 @@ passed to `optimize` **and** to both `plan` calls — `before` and `after` have 
 share a window or the savings figure is meaningless. `dayEnd` stays fixed;
 without an end bound the tail gap is infinite and nothing is ever unfit.
 
+**Never request geolocation on page load.** A permission prompt with no user
+gesture behind it is what browsers auto-dismiss, and the first version also
+recorded "asked" before learning the outcome — so one dismissal disabled the
+feature permanently, and every later load had the position available and still
+never used it. On load, only adopt a position when
+`navigator.permissions.query({name:'geolocation'})` already reports `granted`;
+the prompt comes solely from the explicit button, which is a real gesture.
+
+**`<dialog>` computes `overflow: auto` in Chrome's UA stylesheet.** An
+absolutely-positioned popover inside a sheet is clipped at the sheet's edge —
+measured 55px of a suggestion list lost, with the Save button buried under the
+rest. Inside a dialog, a suggestion list flows (`position: static`) and lets
+the sheet grow.
+
+**One geocoder per query shape, never two in sequence.** Every call goes
+through a 1.1s rate-limit queue, so asking Photon and then Nominatim pushed a
+keystroke-driven suggestion list to about ten seconds. A query opening with a
+house number goes to Nominatim (it resolves house numbers; Photon ranks the bus
+stops ON the street above the building), everything else to Photon (better on
+bare place names). Only an empty first result pays for the second call.
+
 **The origin is `origin: true`, not just `pinned: true`.** The day's starting
 point is a departure, not an appointment. `simulate` resets the clock to a
 pinned stop's `startMin`, so modelling the origin as merely pinned pinned the

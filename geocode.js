@@ -82,13 +82,53 @@ function fromNominatim(json) {
  * Typeahead. Biased to the map's centre when one is supplied, so "costco"
  * finds the nearby one rather than the most famous one.
  */
+/** A query that opens with a house number is someone typing a street address. */
+const looksLikeStreetAddress = (q) => /^\s*\d+[a-z]?\s+\S/i.test(q);
+
 export async function search(query, { near = null, limit = 6, signal } = {}) {
   const q = norm(query);
   if (q.length < 3) return [];
   let url = `${PHOTON}?q=${encodeURIComponent(q)}&limit=${limit}`;
   if (near && Number.isFinite(near.lat)) url += `&lat=${near.lat.toFixed(4)}&lon=${near.lng.toFixed(4)}`;
+
+  const nurl = `${NOMINATIM}?format=jsonv2&addressdetails=1&limit=${limit}&q=${encodeURIComponent(q)}`;
+  const askPhoton = () => queued(() => getJSON(url, signal)).then(fromPhoton);
+  const askNominatim = () => queued(() => getJSON(nurl, signal)).then(fromNominatim);
+
+  // Route to ONE provider rather than merging both: every call goes through a
+  // 1.1s rate-limit queue, so asking twice in sequence doubled the latency of a
+  // keystroke-driven suggestion list to about ten seconds.
+  //
+  // Photon ranks named features above street addresses — "1500 wilson blvd"
+  // returned the bus stops ON Wilson Blvd before the building itself — while
+  // Nominatim resolves house numbers properly but is weaker on bare place
+  // names. So a query that opens with a house number goes to Nominatim, and
+  // everything else to Photon. Only an empty result pays for the second call.
+  const [first, second] = looksLikeStreetAddress(q)
+    ? [askNominatim, askPhoton]
+    : [askPhoton, askNominatim];
+
+  // Providers happily return the same place twice at slightly different
+  // coordinates (a building and its entrance node, say); a suggestion list that
+  // offers the identical line twice looks broken.
+  const dedupe = (hits) => {
+    const seen = new Set();
+    return hits.filter((h) => {
+      const k = `${(h.name || '').toLowerCase()}|${(h.label || '').toLowerCase()}`;
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
+  };
+
   try {
-    return fromPhoton(await queued(() => getJSON(url, signal)));
+    const hits = dedupe(await first());
+    if (hits.length) return hits.slice(0, limit);
+  } catch (err) {
+    if (err?.name === 'AbortError') throw err;
+  }
+  try {
+    return dedupe(await second()).slice(0, limit);
   } catch (err) {
     if (err?.name === 'AbortError') throw err;
     return [];

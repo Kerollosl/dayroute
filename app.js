@@ -28,6 +28,7 @@ const els = {
   btnOrigin: $('btnOrigin'), originValue: $('originValue'), originSheet: $('originSheet'),
   originAddr: $('originAddr'), originNote: $('originNote'),
   originUseGeo: $('originUseGeo'), originClear: $('originClear'),
+  originResults: $('originResults'),
   stopSheet: $('stopSheet'), stopSheetTitle: $('stopSheetTitle'),
   stopName: $('stopName'), stopAddr: $('stopAddr'), stopDwell: $('stopDwell'),
   stopPinned: $('stopPinned'), stopDelete: $('stopDelete'), stopGeoNote: $('stopGeoNote'),
@@ -438,18 +439,107 @@ async function originFromPosition(pos) {
 }
 
 /**
- * Offer the current location as the default, once. If the user refuses, or the
- * browser cannot say, the app simply has no origin and behaves as it did
- * before — this never blocks startup and never asks twice.
+ * Adopt the current location as the starting point, but ONLY when the browser
+ * can give it to us without a prompt — i.e. permission is already granted.
+ *
+ * Asking on page load was the bug. A permission request with no user gesture
+ * behind it is exactly what Chrome auto-dismisses, and the old code marked the
+ * attempt as "asked" before learning the outcome, so a single dismissal
+ * permanently disabled the feature: on every later load the position was
+ * available and still never used. The prompt now only ever comes from the
+ * explicit button in the sheet, which is a real gesture and which always works.
  */
 async function seedOriginFromGeolocation() {
-  if (store.origin || store.originAsked) return;
-  store.markOriginAsked();
+  if (store.origin) return;
+  let state = null;
+  try {
+    state = (await navigator.permissions?.query({ name: 'geolocation' }))?.state;
+  } catch { /* Permissions API unavailable — stay silent rather than prompt */ }
+  if (state !== 'granted') return;
   const pos = await currentPosition({ timeout: 8000 });
   if (!pos || store.origin) return;
   store.setOrigin(await originFromPosition(pos), { checkpoint: false });
   toast('Starting from your current location.', 'ok');
 }
+
+// Address suggestions for the starting point, using the same provider and the
+// same debounce as the Unscheduled search — typing a full address blind and
+// hoping the geocoder agrees is not a reasonable thing to ask of anyone.
+let originPick = null;          // the suggestion the field currently reflects
+let originHits = [];
+let originCursor = -1;
+let originTimer = null;
+let originAbort = null;
+
+function renderOriginHits(hits) {
+  originHits = hits;
+  originCursor = -1;
+  const box = els.originResults;
+  box.textContent = '';
+  if (!hits.length) { box.hidden = true; return; }
+  hits.forEach((h, i) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'search-hit';
+    b.setAttribute('aria-selected', 'false');
+    const strong = document.createElement('b');
+    strong.textContent = h.name || h.label || '';
+    const sub = document.createElement('span');
+    sub.textContent = h.label || '';
+    b.append(strong, sub);
+    b.addEventListener('click', () => takeOriginHit(i));
+    box.appendChild(b);
+  });
+  box.hidden = false;
+}
+
+function moveOriginCursor(d) {
+  if (!originHits.length) return;
+  originCursor = (originCursor + d + originHits.length) % originHits.length;
+  [...els.originResults.children].forEach((el, i) => {
+    el.setAttribute('aria-selected', i === originCursor ? 'true' : 'false');
+    if (i === originCursor) el.scrollIntoView({ block: 'nearest' });
+  });
+}
+
+/** Take a suggestion: it becomes the starting point immediately. */
+function takeOriginHit(i) {
+  const h = originHits[i];
+  if (!h) return;
+  originPick = { lat: h.lat, lng: h.lng, label: h.label || h.name || '' };
+  els.originAddr.value = originPick.label;
+  renderOriginHits([]);
+  store.setOrigin({ lat: h.lat, lng: h.lng, name: '', address: originPick.label, source: 'manual' });
+  els.originNote.dataset.state = 'ok';
+  els.originNote.textContent = `Saved. Starting from ${originPick.label}.`;
+  els.originClear.hidden = false;
+}
+
+async function searchOrigin(q) {
+  originAbort?.abort();
+  originAbort = new AbortController();
+  try {
+    renderOriginHits(await geo.search(q, { near: map.center?.(), signal: originAbort.signal }));
+  } catch { /* superseded by a newer keystroke */ }
+}
+
+els.originAddr.addEventListener('input', () => {
+  clearTimeout(originTimer);
+  originPick = null;                       // typing invalidates the last pick
+  const q = els.originAddr.value.trim();
+  if (q.length < 3) { renderOriginHits([]); return; }
+  originTimer = setTimeout(() => searchOrigin(q), 320);
+});
+
+els.originAddr.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') { renderOriginHits([]); return; }
+  if (e.key === 'ArrowDown') { e.preventDefault(); moveOriginCursor(1); return; }
+  if (e.key === 'ArrowUp') { e.preventDefault(); moveOriginCursor(-1); return; }
+  if (e.key === 'Enter' && originHits.length) {
+    e.preventDefault();
+    takeOriginHit(originCursor >= 0 ? originCursor : 0);
+  }
+});
 
 function openOriginSheet() {
   const o = store.origin;
@@ -457,6 +547,8 @@ function openOriginSheet() {
   els.originNote.textContent = o ? `Currently ${originLabel(o)}.` : '';
   els.originNote.dataset.state = '';
   els.originClear.hidden = !o;
+  originPick = null;
+  renderOriginHits([]);
   els.originSheet.showModal();
   setTimeout(() => els.originAddr.focus(), 30);
 }
@@ -466,18 +558,24 @@ els.btnOrigin.addEventListener('click', openOriginSheet);
 els.originUseGeo.addEventListener('click', async () => {
   els.originNote.dataset.state = '';
   els.originNote.textContent = 'Finding you…';
-  const pos = await currentPosition();
-  if (!pos) {
-    els.originNote.dataset.state = 'bad';
-    els.originNote.textContent = 'Could not get your location. Check location permission for this site, or type an address.';
-    return;
+  els.originUseGeo.disabled = true;
+  try {
+    const pos = await currentPosition();
+    if (!pos) {
+      els.originNote.dataset.state = 'bad';
+      els.originNote.textContent = 'Could not get your location. If the browser blocked it, allow location for this site in the address bar, then try again — or type an address below.';
+      return;
+    }
+    const o = await originFromPosition(pos);
+    store.setOrigin(o);
+    originPick = null;
+    els.originAddr.value = o.address || '';
+    els.originNote.dataset.state = 'ok';
+    els.originNote.textContent = `Saved. Starting from ${o.address || originLabel(o)}.`;
+    els.originClear.hidden = false;
+  } finally {
+    els.originUseGeo.disabled = false;
   }
-  const o = await originFromPosition(pos);
-  store.setOrigin(o);
-  els.originAddr.value = o.address || '';
-  els.originNote.dataset.state = 'ok';
-  els.originNote.textContent = `Starting from ${originLabel(o)}.`;
-  els.originClear.hidden = false;
 });
 
 els.originClear.addEventListener('click', () => {
@@ -488,10 +586,17 @@ els.originClear.addEventListener('click', () => {
 
 els.originSheet.addEventListener('close', async () => {
   if (els.originSheet.returnValue !== 'ok') return;
+  renderOriginHits([]);
   const typed = els.originAddr.value.trim();
   if (!typed) return;                       // Save with an empty box changes nothing
   const cur = store.origin;
-  if (cur && typed === (cur.address || '')) return;   // unchanged
+  if (cur && typed === (cur.address || '')) return;   // unchanged, or already taken
+  // A suggestion the field still reflects is already resolved; re-geocoding the
+  // same string would only risk a different, worse match.
+  if (originPick && typed === originPick.label) {
+    store.setOrigin({ lat: originPick.lat, lng: originPick.lng, name: '', address: originPick.label, source: 'manual' });
+    return;
+  }
   status('Finding address…', 'busy');
   const hit = await geo.resolve(typed);
   if (!hit) {

@@ -691,6 +691,21 @@ code { font-family: var(--font-mono); font-size: .92em; }
 }
 .field { display: flex; flex-direction: column; gap: 5px; }
 .field > span { font-size: var(--fs-2); font-weight: 500; color: var(--text-2); }
+/* An input that owns a suggestion list needs to position it. */
+.field-search { position: relative; }
+
+/* Inside a dialog the list flows rather than floats: Chrome's UA stylesheet
+   puts overflow:auto on <dialog>, which clipped a floating popover 55px past
+   the sheet's edge and buried the Save button underneath it. Flowing lets the
+   sheet grow to fit, and keeps the actions where they belong. */
+.field-search .search-results {
+  position: static;
+  margin-top: var(--space-1);
+  max-height: 172px;
+  box-shadow: none;
+  border-color: var(--sep-strong);
+}
+
 .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); align-items: end; }
 .field--check { flex-direction: row; align-items: center; gap: var(--space-2); padding-bottom: 7px; }
 .field--check input { width: 16px; height: 16px; accent-color: var(--accent); padding: 0; }

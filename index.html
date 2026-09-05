@@ -146,7 +146,13 @@ DESIGN.md, and every shipping raster carrying its provenance.
     <h3 class="sheet-title">Starting point</h3>
     <p class="sheet-help">Where the day begins. The route, the drive times and the Maps link all start here.</p>
     <button type="button" class="btn btn--tonal btn--wide" id="originUseGeo">Use my current location</button>
-    <label class="field"><span>Or enter an address</span><input type="text" id="originAddr" autocomplete="off" spellcheck="false"></label>
+    <label class="field">
+      <span>Or search for an address</span>
+      <div class="field-search">
+        <input type="text" id="originAddr" autocomplete="off" spellcheck="false" placeholder="Start typing a place or address">
+        <div class="search-results" id="originResults" hidden></div>
+      </div>
+    </label>
     <p class="field-note" id="originNote"></p>
     <div class="sheet-actions">
       <button class="btn btn--danger" id="originClear" type="button">Clear</button>
