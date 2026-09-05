@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "cream-palette",
+        "value": "*",
+        "files": [
+          "index.html"
+        ],
+        "createdAt": "2026-09-05T05:19:58.466Z",
+        "reason": "user confirmed: explicitly asked for a white/off-white ground with green and a complementary colour. Warm oat also serves the printed-transit-diagram world — a cool grey-white would read clinical rather than as paper stock. Scoped to index.html, where the ground is declared."
+      }
+    ]
+  }
+}

@@ -34,6 +34,7 @@ const els = {
 const store = new Store();
 let links = [];
 let copiedSignature = null;   // the link content last successfully copied, or null
+let lastMatrix = null;        // most recent driving matrix, for live drag constraints
 
 /** Identifies WHAT the link points to, not just that a copy happened — any
  * change here (reorder, added/removed stop, re-optimise) means the copied
@@ -126,10 +127,27 @@ map.ready.then((ok) => {
 });
 
 // -- views -----------------------------------------------------------------
+/**
+ * Driving seconds between any two stops, straight off the cached matrix — no
+ * network, so it can run inside a drag. Returns null when the pair simply
+ * isn't known yet (not geocoded, matrix not fetched, routing offline), and
+ * every caller treats null as "don't enforce": a constraint that can't be
+ * computed must never block the user.
+ */
+function driveSecondsBetween(a, b) {
+  if (!lastMatrix || !a || !b) return null;
+  if (!Number.isFinite(a.lat) || !Number.isFinite(b.lat)) return null;
+  try {
+    const v = lastMatrix.durations?.[lastMatrix.mi(a)]?.[lastMatrix.mi(b)];
+    return Number.isFinite(v) ? v : null;
+  } catch { return null; }
+}
+
 const schedule = new Schedule({
   store, els,
   onEditStop: (id, opts) => openStop(id, opts),
   onHoverStop: (id) => map.setHover(id),
+  driveSecondsBetween,
   toast,
 });
 
@@ -221,6 +239,7 @@ async function recompute({ fit = false, unfitIds = null } = {}) {
   }
 
   const m = await R.fetchMatrix(routable);
+  lastMatrix = m;
   const mstops = withIndex(routable, m);
   const order = mstops.map((_, i) => i);           // time order IS the route order
   const p = R.plan(order, mstops, m);

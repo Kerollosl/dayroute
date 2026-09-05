@@ -2,25 +2,29 @@
 name: dayroute
 description: A day of driving read as a rail line, not a list — the schedule is the diagram.
 colors:
-  enamel: "#0B1230"
-  enamel-raise: "#0E1838"
-  enamel-sink: "#070C22"
-  hairline: "#1E2C57"
-  hairline-soft: "#16214333"
-  porcelain: "#FFFFFF"
-  ink: "#E8ECF6"
-  ink-mid: "#9FAECC"
-  ink-dim: "#7C8AAC"
-  scarlet: "#E21D2D"
-  scarlet-hover: "#C4121F"
-  scarlet-lift: "#FF6B75"
-  cobalt: "#1E5BFF"
-  cobalt-ink: "#6E9BFF"
-  amber: "#FFC20E"
-  green: "#22B14C"
-  green-lift: "#56D882"
-  enamel-hover: "#12204A"
-  connector: "#2A3A66"
+  green: "#0E7A46"
+  green-ink: "#095430"
+  green-deep: "#0A5C34"
+  green-edge: "#0E7A4655"
+  green-wash: "#0E7A4614"
+  green-tint: "#0E7A4622"
+  clay: "#B0431F"
+  clay-ink: "#8F3517"
+  clay-edge: "#B0431F55"
+  clay-wash: "#B0431F12"
+  clay-rim: "#B0431F66"
+  paper: "#E6E1D4"
+  paper-raise: "#FFFFFF"
+  paper-sink: "#DAD4C4"
+  paper-hover: "#F3F0E7"
+  paper-veil: "#FFFFFFCC"
+  rule: "#C9C2AF"
+  rule-soft: "#C9C2AF66"
+  ink-strong: "#141814"
+  ink: "#2A302C"
+  ink-mid: "#454E49"
+  ink-dim: "#5E6661"
+  scrim: "#141814B8"
 typography:
   micro:
     fontFamily: "Archivo, ui-sans-serif, system-ui, sans-serif"
@@ -80,6 +84,7 @@ rounded:
   chrome: "5px"
 spacing:
   hair: "1px"
+  hair-wall: "2px"
   space-1: "4px"
   space-2: "8px"
   space-3: "12px"
@@ -89,12 +94,15 @@ spacing:
   space-7: "32px"
 components:
   button-primary:
-    backgroundColor: "{colors.scarlet}"
-    textColor: "{colors.porcelain}"
+    backgroundColor: "{colors.green}"
+    textColor: "{colors.paper-raise}"
     rounded: "{rounded.chrome}"
     padding: "12px 16px"
   button-primary-hover:
-    backgroundColor: "{colors.scarlet-hover}"
+    backgroundColor: "{colors.green-deep}"
+  button-primary-active:
+    backgroundColor: "{colors.paper}"
+    textColor: "{colors.green-ink}"
   button-ghost:
     backgroundColor: "transparent"
     textColor: "{colors.ink-mid}"
@@ -102,278 +110,279 @@ components:
     padding: "12px 16px"
   button-line:
     backgroundColor: "transparent"
-    textColor: "{colors.cobalt-ink}"
+    textColor: "{colors.green-ink}"
     rounded: "{rounded.chrome}"
     padding: "12px 16px"
   button-line-ready:
-    backgroundColor: "{colors.cobalt}"
-    textColor: "{colors.porcelain}"
+    backgroundColor: "{colors.green}"
+    textColor: "{colors.ink-strong}"
+  button-danger:
+    backgroundColor: "transparent"
+    textColor: "{colors.clay-ink}"
+    rounded: "{rounded.chrome}"
+    padding: "12px 16px"
   station-fixed:
-    textColor: "{colors.porcelain}"
+    textColor: "{colors.ink-strong}"
     typography: "{typography.micro}"
   station-flexible:
-    textColor: "{colors.cobalt}"
+    textColor: "{colors.green}"
     typography: "{typography.micro}"
   station-unfit:
-    textColor: "{colors.amber}"
+    textColor: "{colors.clay}"
     typography: "{typography.micro}"
 ---
 
-# Design System: dayroute — The Midnight Line
+# Design System: dayroute — The Paper Line
 
 ## Overview
 
-**Creative North Star: "The Midnight Line"**
+**Creative North Star: "The Paper Line"**
 
-dayroute refuses the arrangement every trip planner ships — itinerary cards beside a map panel — because that arrangement hides the one fact the product exists to surface: where the driving costs you time. Instead the schedule *is* the diagram. A vertical time axis (The Line) places each stop at its real clock position, so the empty space between two stations is drawn to scale and IS the drive leg, not a caption about it. The whole system reads as a fired-enamel metropolitan transit map: one midnight-blue material lit by three saturated inks that carry state, everything else rendered in hairline navy and tabular figures.
+dayroute's thesis is unchanged by this pass: the schedule *is* the diagram, not a list beside a map. A vertical time axis (The Line) places every stop at its real clock position, so the empty space between two stations is drawn to scale and IS the drive leg. What changed is the material the diagram is printed on. The system's original world — fired enamel, midnight blue, lit by scarlet/cobalt/amber — is entirely gone, replaced at the user's explicit, direct instruction after it failed in the product's own stated use scene: read on a phone, in a car, in the sun. The direction contract embedded in `index.html`'s `<body>` comment records the change plainly: *"Palette replaced at the user's direction; the dark original lost to a daylight use scene."* There was no fresh Impeccable direction round behind this world the way there was for the enamel one (seed `3faa1e80`); the code — `style.css`, `schedule.js`, `map.js` — is the only design record, exactly as it was before.
 
-This is a bolder-register world chosen from Impeccable's direction round (seed `3faa1e80`, catalog id `wayfinding-cartography-signage-midnight-transit-diagram`), built in Operate mode along a code-led path — there is no image-generation step in this harness, so no approved visual comp exists upstream of the CSS and JS themselves; the code *is* the design record. Even the favicon is a miniature Line: a scarlet route with two porcelain interchange dots on an enamel ground.
+The new world reads as a rail diagram printed on warm oat stock: one paper ground, cards raised to true white, one green line ink for the route and everything routine, and clay — green's complement — held to exactly one job: won't-fit and collision, never anything ordinary. The card/ground separation is not a stylistic pick; it is a measured floor. Paper Raise on Paper is **1.31:1**, and that number exists in this document because the previous theme's identical step — its raised "above" surface against its ground — measured **1.12:1** and was reported twice, independently, in the plain words "events are the same colour as the calendar, hard to visually see." `--ink-dim`, the system's dimmest legible text, holds its own measured floor: **4.53:1** on paper, "the floor, not a soft grey" (verbatim from the stylesheet).
 
-Confirmed rejections, all visible in the shipped code: no shadow anywhere except one load-bearing exception (a pinned map pin's concentric ring, built from `box-shadow` because MapLibre markers have no native double-ring), no gradient (the ground texture is an SVG hairline mesh, not a gradient), and no stock basemap tile set (OpenFreeMap's `dark` style is recoloured at load into the same enamel ramp the interface uses). Radius is no longer an absolute rejection: after the user reported the surface as "harshly square" and "stiff and boxy" three times running, a structured question resolved it into a considered split — see Shapes — rather than a reversal of the whole no-shadow/no-gradient/no-stock-tile stance, which stayed intact.
+Confirmed rejections, all visible in the shipped code: no shadow anywhere except the map's own markers (`.pin-tick`/`.pin-stem`/`.pin-label`, all three now, not one hack for one state — see Elevation & Depth), no gradient (the ground texture is still an SVG hairline mesh, its stroke baked directly into the data URI), and no stock basemap tile set (OpenFreeMap's `positron` style is recoloured at load into the paper ramp by `map.js`'s `enamelise()` — a function name that is now, honestly, a misnomer left over from the enamel world; nothing about its output touches enamel any more). The chrome/diagram radius split survives the palette swap untouched: tool chrome rounds at `--radius-chrome` (5px), the diagram and the map's own route/track stay exactly `0`, circles their only curve.
 
 **Key Characteristics:**
-- One material (fired enamel, four tonal steps — sink, ground, raise, hover), separated by hairlines, never by shadow.
-- Exactly three state inks on the diagram (porcelain / cobalt / amber); amber doubles as the system's general attention ink in chrome (the map's now-line, advisories, the busy status dot) but narrows to won't-fit alone the instant it lands on a station or a pin. Green is confirmation-only chrome and never touches the Line or the map.
-- Archivo Narrow for every number and every signage-style caps label; Archivo for reading text.
-- All figures that count something are tabular and right-set: totals, sequence numbers, leg minutes.
-- Depth is tonal (four enamel steps), not cast — flat by material, not flat by accident.
-- Radius is split, not absolute: tool chrome rounds at `--radius-chrome` (5px, a deliberate, user-chosen reversal of the system's original zero-radius stance); the diagram itself stays exactly `0`, with circles as its only curve.
-- The type scale is eight named roles (`micro`/`ui-text`/`sub-head`/`compact-stat`/`wordmark`/`secondary-lead`/`mobile-lead`/`primary-lead`, 11–39px on a ≈×1.2 progression), rebuilt wholesale — along with a real 4px spacing grid and three line-height roles — after the prior per-component values were confirmed by audit to not add up to a system.
-- A station on the Line is a tick with a label beside it, not a card — the event shell is transparent and borderless at rest, and a hover/selection surface only appears behind the tick, connector, and label together, so they read as one object.
-- Motion splits cleanly by role: ordinary state change runs on `--t-fast`/`--t-base` with the system's original ease; anything that travels — a reorder, a count-up, a route drawing itself on — runs on `--t-move`/`--ease-out`. The system permits exactly one ambient loop (the busy status dot); a second one was tried on the now-line and rejected.
-- The basemap is not a stock tile: its colours are re-derived from the source style's own luminance into the interface's ramp.
+- Ground is a material, not a backdrop: warm paper throughout (`--paper`), cards raised to pure white (`--paper-raise`) at a measured, load-bearing 1.31:1 step — a floor, recorded here because dropping toward the old theme's 1.12:1 is the exact failure this palette exists to fix.
+- Two line inks, not four: green is the route, the primary action, and a flexible station; clay is its sole complement — attention, won't-fit, and collision, never anything routine. Down from the enamel world's three state inks plus a fourth confirmation-only accent.
+- Both line inks carry a deepened text-only variant, because each raw value fails the 4.5:1 small-text floor on paper (green measures 4.13:1, clay 4.38:1): `--green-ink` reaches 6.93:1, `--clay-ink` reaches 5.98:1. This is the same shape of fix the enamel world's `--cobalt-ink` was, for the same reason — a saturated line ink and a legible small-text colour are rarely the same value.
+- The Line is drawn in weighted, proportional segments, not a dot in a gap: heavy (7px) while stopped at a station, solid (3px) while actually driving, dashed (3px, `2 4`) across slack — and the drive/slack split is proportional to real minutes, so the shape itself answers "do I have room here?" before any number is read.
+- `schedule.js` now reads every Line colour from CSS custom properties via `getComputedStyle` at draw time, and `app.js`'s legend does the same for its three swatches — neither hardcodes a hex. This is recorded as a rule because it is the second time a palette replacement in this project left literal colours quietly pointing at the dead theme (see Colors → The Tokenised Derivative Rule).
+- Map markers are real pins — a 26px badge on a 9px stem, anchored so the stem's tip sits on the coordinate — with a styled hover label replacing the browser's native tooltip. `box-shadow` is permitted on the pin alone, nowhere else: a marker floats over arbitrary, unpredictable tile colour and cannot separate from it by tonal step the way every other surface in the system does.
+- The basemap is Positron (light), not a dark style — recoloured by source luminance onto the same paper the interface is printed on, so the map reads as a panel of the same document rather than a foreign tile set.
+- The type scale (eight named roles, 11–39px, ≈×1.2), the 4px spacing grid, the `--hair`/`--hair-wall` border-weight hierarchy, the chrome/diagram radius split, and the five-value motion system all carry over from the prior build unchanged — reverified against the current code, not assumed.
 
 ## Colors
 
-The palette is one fired-blue material lit by three saturated line inks, with a fourth colour (green) held out of the diagram entirely as confirmation chrome.
+Two saturated line inks — green and clay, one hue apart, complements of each other — sit on a warm paper neutral ramp. Every alpha wash or hover-deepened fill derived from either ink is its own named token; none is inlined.
 
-### Primary
-- **Scarlet — Route Ink** (`#E21D2D`): the track through the Line, the primary button fill, the recolored basemap's route line, the brand mark. Hover deepens to **`#C4121F`** — a floor value, not a guess: it clears 6.14:1 contrast against white text, so the hover state never trades legibility for feedback.
-- **Scarlet Lift** (`#FF6B75`): a lightened lift of scarlet, tokenized as `--scarlet-lift` and used for exactly one thing — error-toast text on the dark `enamel-raise` surface, where the full-strength route ink would read too dark.
+### Primary — Green
+- **Green — Route & Flexible Ink** (`#0E7A46`): the track through the Line, the recoloured basemap's route ink (under a white casing), the primary button fill (Optimise), a flexible station's ring-and-core on both the Line and the map, `::selection` background, the checkbox `accent-color`, the search input's focus border and the search-results border, and the legend's "Flexible" swatch. It is the system's single "go" colour.
+- **Green Deep** (`#0A5C34`, 6.20:1 on paper): the pressed/hover state of any green fill — `.btn--primary:hover` and `.btn--line.is-ready:hover` both deepen here. It never lightens on interaction.
+- **Green Ink** (`#095430`, 6.93:1): green as small text. Raw green measures only 4.13:1 on paper — under the 4.5:1 small-text floor — so wherever green sits as *text* rather than a fill or a ring (the Line's drive-duration chip label, `.btn--line`'s resting label, `.daynav-today`'s hover state, an `is-multiselected` station's outline) it reaches for green-ink instead.
+- **Green Edge / Wash / Tint** (`#0E7A4655` / `#0E7A4614` / `#0E7A4622`): three low-alpha derivatives of green, each tokenised rather than inlined. Edge and Wash together frame the positive ("less driving") delta panel's border and background; Tint alone washes FullCalendar's own drag-to-create highlight.
 
-### Secondary
-- **Cobalt — Flexible Station** (`#1E5BFF`): the ring ink for an unpinned ("flexible") stop on the Line and its map pin; also the system's single `:focus-visible` outline colour and the border of the maps-handoff button (see Components → Maps Handoff). Cobalt is the system's "go" colour outside the state-ink context.
-- **Cobalt Ink** (`#6E9BFF`): a lifted cobalt, tokenized as `--cobalt-ink` and used wherever cobalt sits as small text directly on the enamel ground rather than as a fill or a ring — the Day Nav's "Today" hover state and the maps-handoff button's label at rest. Raw `--cobalt` measures 3.49:1 there, under the 4.5:1 floor for text; `--cobalt-ink` exists so "go" text is legible without becoming a fourth blue.
+### Secondary — Clay
+- **Clay — Attention Ink** (`#B0431F`): green's complement, and the system's only other state-carrying hue. On the diagram — a station tick or a map pin — it means exactly one thing: won't-fit or collision, never a routine drive leg. Outside the diagram it is the general chrome attention ink: the rail-note advisory, the warn and error toasts, the stop sheet's failed-geocode note, the danger button, and the status dot for **both** "busy" (pulsing) and "error" (static) — the two now share this one ink, since the palette holds no fourth colour to spare for a separate busy identity; only the pulse tells them apart.
+- **Clay Ink** (`#8F3517`, 5.98:1): clay as small text. Raw clay measures 4.38:1 on paper — again under the small-text floor — so the danger button's label, the siding-delete hover state, and a won't-fit pin's colouring reach for clay-ink instead.
+- **Clay Edge / Wash / Rim** (`#B0431F55` / `#B0431F12` / `#B0431F66`): clay's low-alpha derivatives — the negative ("more driving") delta panel's border and background, the rail-note's border, and the danger button's resting border, respectively.
 
-### Tertiary
-- **Amber — Attention Ink** (`#FFC20E`): the system's general "pay attention here" colour — FullCalendar's now-line, the rail-note advisory, the warn toast, the busy status dot, and the stop sheet's failed-geocode note all use it for exactly that reason. On a station or a map pin, though, it carries exactly one meaning: a stop the optimiser could not fit into the day (the Line's station ring, the map pin, the `Won't fit` badge, and the legend). It never marks a routine drive leg — the Line's own gap-tick labels stay neutral ink-dim/ink-mid regardless of how long the leg runs.
-- **Green — Confirmation** (`#22B14C`): stays in chrome, never on the Line or the map. It is the ready-status dot and the "less driving" delta panel (`background: #22B14C14`, `border: #22B14C4D` at low alpha over the raised enamel).
-- **Green Lift** (`#56D882`): the same lift treatment as scarlet's, tokenized as `--green-lift`, used only for ok-toast text.
+### Neutral — Paper & Ink
+- **Paper** (`#E6E1D4`): the ground — page background, the Line's own body, `<meta name="theme-color">`, the favicon's ground. A deliberately warm oat, not a plain white or grey (see Named Rules).
+- **Paper Raise** (`#FFFFFF`): the "above" surface, at true white — a scheduled station's card, sheets, search-result dropdowns, the route's own map casing, a pin's badge fill. Measured 1.31:1 against Paper; see The Card Floor Rule.
+- **Paper Sink** (`#DAD4C4`): the "below" surface — the rail, the tray, the map's own background and loading scrim, both hairline-mesh panels.
+- **Paper Hover** (`#F3F0E7`): the interaction lift between Paper and Paper Raise — a station's hover/selection wash, a search-hit's hover fill.
+- **Paper Veil** (`#FFFFFFCC`): translucent white behind the map's attribution strip, so attribution text stays legible over whatever tile colour happens to sit underneath it, without a hard opaque box.
+- **Rule / Rule Soft** (`#C9C2AF` / `#C9C2AF66`): the system's one hairline colour and its low-alpha variant, reserved for FullCalendar's non-hour minor gridlines.
+- **Ink Strong** (`#141814`, 13.74:1): headings, lead figures, brand — and, doubling as a state ink, a fixed appointment's station ring, map pin, and "Fixed" badge.
+- **Ink** (`#2A302C`, 10.33:1): default body text.
+- **Ink Mid** (`#454E49`, 6.60:1): secondary text, ghost-button labels, the day-nav chevrons, a hovered station's border.
+- **Ink Dim** (`#5E6661`, 4.53:1): the dimmest legible text in the system — every 11px meta/address/label line. Specified, not guessed: 4.53:1 is stated as "the floor, not a soft grey" directly in the stylesheet.
+- **Scrim** (`#141814B8`): the dialog backdrop — ink-strong at high alpha, not a generic black.
 
-### Neutral
-- **Porcelain** (`#FFFFFF`): the brightest value in the system. Dual role — it is both the neutral extreme (lead totals, station names, brand name, button text on scarlet/cobalt fills) *and* the state ink for a fixed appointment ("interchange") on the Line and map. No other neutral carries state.
-- **Ink** (`#E8ECF6`): default body text color.
-- **Ink Mid** (`#9FAECC`): secondary text, ghost-button labels, hairline hover states, the neutral dot on a drive-leg tag.
-- **Ink Dim** (`#7C8AAC`): the system's dimmest legible text — used for every 11px label (totals, badges, meta lines, status). It is specified, not guessed: it clears **5.05:1** against `--enamel-raise`, the system's floor for functional text at 11px.
-- **Enamel** (`#0B1230`): the ground — page background, the Line's own body, `<meta name="theme-color">`.
-- **Enamel Raise** (`#0E1838`): the "above" surface — station/event boxes, sheets, search-result dropdowns.
-- **Enamel Hover** (`#12204A`): a fourth, brighter tonal step above `enamel-raise`, tokenized as `--enamel-hover` — the interaction fill for a hovered station card, a selected station card, and a hovered search result. The material ladder is now four steps, not three: sink < enamel < raise < hover. (A siding card in the tray still steps up from `enamel` to `enamel-raise` on hover, one rung lower on the same ladder — it never reaches `enamel-hover`.)
-- **Enamel Sink** (`#070C22`): the "below" surface — the rail sidebar, the tray, the map's own background and loading scrim, the track's casing stroke.
-- **Hairline** (`#1E2C57`) / **Hairline Soft** (`#16214333`): the only dividers in the system. Hairline Soft is reserved for FullCalendar's minor (non-hour) gridlines so the hour grid still reads as the primary structure.
-- **Connector** (`#2A3A66`): a hairline-adjacent tone that exists only for one thing — the resting colour of the line joining a station's tick to its label on the Line (see The Line, under Components). It is close to `--hairline` but distinct from it; when a station is hovered or selected the connector switches to that station's own ink instead.
-
-**Browser-native surfaces are themed too.** `::selection` sets cobalt background with porcelain text — the same pairing as an active map pin. Scrollbars are tokenised rather than left to the OS default: `scrollbar-color` and `::-webkit-scrollbar-thumb` use `--hairline` at rest, brightening to `--ink-dim` on hover, at a fixed 9px thickness.
+**Browser-native surfaces are themed too.** `::selection` sets green background with ink-strong text. Scrollbars use `--rule` at rest, brightening to `--ink-dim` on hover, at a fixed 9px thickness — unchanged mechanism from the prior world, just recoloured.
 
 ### Named Rules
-**The Three Inks Rule.** Exactly three colours carry state on the diagram itself: porcelain (fixed), cobalt (flexible), amber (won't-fit). No fourth state colour is introduced on the Line or a map pin.
+**The Card Floor Rule.** Paper Raise on Paper measures 1.31:1 — the separation that makes a scheduled event legibly distinct from an empty grid row. This is a floor, not a target to erode: the previous world's identical "raised above ground" step measured 1.12:1 and was reported twice, independently, as illegible. A future material change may not reintroduce that gap.
 
-**The Chrome-Only Green Rule.** Green never appears on the Line or the map. It is confirmation chrome exclusively — the ready-status dot and the saved-time delta.
+**The Deepened-Ink Rule.** Both line inks fail the 4.5:1 small-text floor at their raw value — green at 4.13:1, clay at 4.38:1 — so each carries a deepened, text-only sibling (`--green-ink` at 6.93:1, `--clay-ink` at 5.98:1) for every place the colour sits as text rather than a fill or a ring. The same shape of fix existed in the prior world as `--cobalt-ink`; it recurs here because a saturated line ink and a legible small-text colour are rarely the same value, in any palette.
 
-**The Contrast-Floor Rule.** `--ink-dim` is `#7C8AAC` specifically because it clears 5.05:1 on `--enamel-raise` — the floor for the system's smallest functional text. The primary hover `#C4121F` is specified the same way, for 6.14:1 against white, and `--cobalt-ink` the same way again — raw `--cobalt` on the enamel ground measures 3.49:1, under the 4.5:1 text floor, so any small cobalt text reaches for the lifted variant instead.
+**The Two Inks Rule.** Exactly two hues carry state on the diagram and the map — green (route, flexible) and clay (won't-fit, collision) — plus ink-strong, a neutral extreme that marks a fixed appointment without being a third hue. No new colour is introduced on the Line or a pin for a state these two, plus ink-strong, don't already cover.
 
-**The Attention-Ink Rule.** Outside the diagram, amber is the system's general attention ink: the map's now-line (a static amber dot on the current-time line — a pulsing version was tried and rejected in the finish pass for competing with the Line's own focal moments), the rail-note advisory, the warn toast, the busy status dot, and the stop sheet's failed-geocode note (`.field-note[data-state="bad"]`) all reach for it to mean "look here." The instant amber lands on a station or a map pin, though, it narrows to exactly one meaning — won't-fit — and nothing else on the diagram is ever coloured amber for a routine reason. This is what keeps the Three Inks Rule true at the diagram level while amber stays useful everywhere else.
+**The Tokenised Derivative Rule.** Every alpha wash, hover-deepened fill, or backdrop tint is a named custom property — `--green-edge`, `--clay-wash`, `--scrim`, and seven more like them — never an inline hex or `rgba()` outside `:root`. This is written down because it has already failed twice in this project's history: a palette replacement leaves bare literals silently pointing at the dead theme unless every derived value is tokenised in the same pass as the primaries. Nine such literals were caught and tokenised in the same session that produced this document; a bare colour value found outside `:root` in a future review is itself the signal that the rule was skipped.
+
+**One known gap, recorded rather than hidden:** `.toast[data-kind="ok"]` sets `color: var(--green-lift)` — a token that does not exist anywhere in `:root`. This is a leftover reference to the previous world's `--green-lift`, not a decision; an undefined custom property makes the whole declaration invalid at computed-value time, so an "ok" toast's text silently falls back to the inherited `--ink` instead of reading in a distinct green. It is flagged here as a defect to fix (add a `--green-lift` token or point the rule at `--green-ink`), not canonised as how ok-toasts are supposed to look.
 
 ## Typography
 
 **Display Font:** Archivo Narrow (weight 700) — every display figure and the brand wordmark.
 **Body Font:** Archivo (weights 400/600/700) — everything else.
-**Mono Font:** `ui-monospace, SFMono-Regular, Menlo` — the paste-a-list textarea (13px, on-scale) and inline `<code>` (a relative `0.92em`, the system's one type value that sits outside the fixed scale on purpose, since it has to shrink or grow with whatever text surrounds it).
+**Mono Font:** `ui-monospace, SFMono-Regular, Menlo` — the paste-a-list textarea (13px, on-scale) and inline `<code>` (a relative `0.92em`, the one type value outside the fixed scale on purpose, since it has to shrink or grow with the text around it).
 
-**Character:** one grotesque family doing two jobs. Archivo Narrow's condensed width carries every display figure and the brand wordmark; full-width Archivo carries labels and reading text. Every numeral that counts something is rendered tabular — `font-feature-settings: "tnum" 1, "cv05" 1` globally on `body`, reinforced with explicit `font-variant-numeric: tabular-nums` on the figures that matter most.
+**Character:** unchanged from the prior world — one grotesque family doing two jobs. Archivo Narrow's condensed width carries every display figure and the brand wordmark; full-width Archivo carries labels and reading text. Every numeral that counts something renders tabular (`font-feature-settings: "tnum" 1, "cv05" 1` globally on `body`, reinforced with `font-variant-numeric: tabular-nums` on the figures that matter most).
 
-This is a rebuilt system, not the original one repaired. The prior scale was nine raw pixel values with consecutive ratios scattering from 1.048 to 1.357 — no real progression — plus font-weight that was only ever *explicitly* 600 or 700 (400 was always inherited, never stated) and six different ad-hoc line-heights crammed into just the 11–12px range. An independent audit confirmed exactly what the user meant by "fonts and font sizes and spacing doesn't make sense," and the type scale, the line-height roles, and the weight rule below replace that wholesale, not patch it.
+The palette replacement did not touch type. The eight-role scale, its weight rule, and its three line-height roles are reverified against the current stylesheet and carried forward exactly.
 
 ### The Type Scale
 
-Eight sizes, one progression (≈×1.2, rounded to whole pixels), each a named **role** — a future addition picks a role instead of eyeballing a number. Declared and commented at the top of `style.css`'s `:root`:
-
 | Token | Size | Role | Where it lands |
 |---|---|---|---|
-| `--fs-1` | 11px | micro | Badges, meta/address lines, footnotes — the system's floor. Carries both the uppercase signage caps (brand-sub, day-nav "Today," totals labels, delta label, pane count, legend, status, form field labels, map attribution) and a set of plain reading-adjacent lines (rail-note, station meta, addresses, the field's confirm/error note) — the same size doing two jobs, the way it did before, but now the two jobs are told apart by weight and line-height (see below), not left ambiguous. |
-| `--fs-2` | 13px | UI text | Buttons, inputs, names, sequence numbers — the most-shared step. Both interactive/identifying UI text (buttons, pane titles, the day-nav date, station and siding names, search-result names, sheet titles) and reading text (sheet help copy, form field values, the paste textarea, toast text) land here. |
-| `--fs-3` | 16px | sub-head | Declared for dialog titles and tight-context brand — but its one actual consumer today is the tray's delete glyph (`×`), borrowed purely so a lone character reads clearly, not because a delete button is a sub-head. Dialog titles (`sheet-title`) and the pane heading (`pane-title`) are both set at `--fs-2` instead, one step down from what the role's own name promises. |
-| `--fs-4` | 19px | compact stat | The optimisation delta figure and the day-nav's prev/next chevrons — a real figure and a navigation glyph sharing one size for no reason but coincidence. |
-| `--fs-5` | 23px | wordmark | The brand name, and — coincidentally, as before — the mobile-breakpoint secondary total figure (miles/stops at ≤900px). |
+| `--fs-1` | 11px | micro | Badges, meta/address lines, footnotes — the system's floor. Both the uppercase signage caps (brand-sub, day-nav "Today," totals labels, delta label, pane count, legend, status, form field labels, map attribution) and plain reading-adjacent lines (rail-note, station meta, addresses, the field's confirm/error note). |
+| `--fs-2` | 13px | UI text | Buttons, inputs, names, sequence numbers — the most-shared step. Both interactive/identifying UI text and reading text (sheet help copy, form field values, the paste textarea, toast text). |
+| `--fs-3` | 16px | sub-head | Declared for dialog titles and tight-context brand; its one real consumer is the tray's delete glyph (`×`). Dialog titles (`sheet-title`) and the pane heading (`pane-title`) both actually sit one step down at `--fs-2`. |
+| `--fs-4` | 19px | compact stat | The optimisation delta figure and the day-nav's prev/next chevrons. |
+| `--fs-5` | 23px | wordmark | The brand name; the mobile-breakpoint secondary total figure shares this size coincidentally. |
 | `--fs-6` | 27px | secondary lead | The desktop miles and stop-count totals beside the lead figure. |
 | `--fs-7` | 33px | mobile lead | The driving-total lead figure at ≤900px. |
 | `--fs-8` | 39px | primary lead | The driving-total lead figure on desktop — the single largest number in the system. |
 
-One text size lives outside this table entirely: the Line's own drive-leg minute label is drawn at `9.5px` inline inside the SVG overlay (`schedule.js`), not declared in CSS, so it never shows up in a CSS-level audit of the scale.
+One text size lives outside this table: the Line's own drive-leg and slack labels are drawn at `11px` directly inline inside the SVG overlay (`schedule.js`), not declared in CSS, so they never surface in a CSS-level audit of the scale.
 
 ### Weight
 
-Three weights, each carrying real hierarchy rather than being scattered per-component: **400** for reading/meta text (search input values, sheet help copy, toasts, addresses, advisories — now stated explicitly in every rule that uses it, not left to inherit silently as it was before); **600** for interactive/UI text (buttons, station and siding names, search-result names); **700** for anything that leads — headings that are display figures or brand, all tabular figures, and state-asserting badges (`Won't fit`, `Fixed`).
+Three weights carry real hierarchy: **400** for reading/meta text; **600** for interactive/UI text (buttons, station and siding names, search-result names); **700** for anything that leads — display figures, brand, and state-asserting badges (`Won't fit`, `Fixed`, `Conflict`).
 
-Named exceptions — record these as deliberate, not as violations:
-- **`.daynav-btn`** (the prev/next chevron) stays unweighted at 400 despite sitting at the `compact-stat` size. It's a navigation glyph, not data; forcing it to 700 would make a `‹`/`›` arrow compete with the figures around it for weight it doesn't need.
-- **`.daynav-date`** stays 700 at `--fs-2`, one weight class above its size-mates, because it's the primary identifier inside the Day Nav control, not a secondary label riding along beside one.
-- **`.pane-title`** and **`.sheet-title`** are semantic headings (`<h2>`/`<h3>`) that override the reset's default heading weight (700, set globally on `h2, h3`) down to 600. A chrome label being a heading element doesn't make it a display lead; 700 stays reserved for figures and brand, not for every `<h2>`/`<h3>` in the markup.
+Named exceptions, unchanged from the prior world and reverified: `.daynav-btn` stays 400 despite sitting at the `compact-stat` size (a navigation glyph, not data); `.daynav-date` stays 700 at `--fs-2` as the control's primary identifier; `.pane-title`/`.sheet-title` are `<h2>`/`<h3>` deliberately downgraded to 600 so a chrome label doesn't compete with figures/brand for 700's weight.
 
-**Loaded but unused:** the Google Fonts request pulls Archivo weight 500 (`Archivo:wght@400;500;600;700`), but no rule in `style.css` sets `font-weight: 500` anywhere. It costs a slightly larger font payload and asserts nothing.
+**Loaded but unused:** the Google Fonts request still pulls Archivo weight 500 (`Archivo:wght@400;500;600;700`), and no rule in `style.css` sets `font-weight: 500` anywhere — an unchanged, still-live cost from before the palette swap.
 
 ### Line Height
 
-Three roles replace what were six ad-hoc values crammed into the 11–12px range alone: **`--lh-tight` (.95)** for the big hero figures (all four lead/secondary total figures); **`--lh-label` (1.1)** for short single-line UI text that structurally never wraps (badges, buttons, pills, status, form field labels); **`--lh-read` (1.5)** for anything that's actually prose — addresses, help text, advisories, the brand tagline — content that could wrap even where truncation currently clips it.
-
-Two bare literals survive outside the three roles, both deliberate single-character exceptions: the paste textarea sets `line-height: 1.7` (more air than `--lh-read` gives a block of monospace text) and the siding delete glyph (`×`) sets `line-height: 1` (a single glyph, not a line of text, has no use for any of the three roles).
+`--lh-tight` (.95) for the big hero figures; `--lh-label` (1.1) for short single-line UI text that never wraps; `--lh-read` (1.5) for anything that's actually prose. Two bare-literal exceptions survive outside the three roles: the paste textarea's `1.7` and the delete glyph's `1`.
 
 ### Named Rules
-**The Named-Role Scale Rule.** Every font size is one of the eight `--fs-` tokens, and every token is documented by role, not just by number. A new component reaches for a role — never a bare pixel value, and never a ninth size.
+**The Named-Role Scale Rule.** Every font size is one of the eight `--fs-` tokens, documented by role. A new component reaches for a role, never a bare pixel value or a ninth size.
 
-**The Weight Carries Hierarchy Rule.** 400/600/700 mean reading text / interactive text / a leading figure-or-brand-or-badge, consistently, everywhere except the three named exceptions above. A font-weight that doesn't fit one of those three meanings is a sign the text has drifted outside the system, not a new pattern to extend.
+**The Weight Carries Hierarchy Rule.** 400/600/700 mean reading text / interactive text / a leading figure-or-brand-or-badge everywhere except the three named exceptions above.
 
-**The Three Line-Heights Rule.** `--lh-tight`/`--lh-label`/`--lh-read` are the complete set. The two bare-literal exceptions (the paste textarea's `1.7`, the delete glyph's `1`) are single-purpose optical fixes, not a fourth role to reach for elsewhere.
+**The Three Line-Heights Rule.** `--lh-tight`/`--lh-label`/`--lh-read` are the complete set; the two bare-literal exceptions are single-purpose optical fixes, not a fourth role.
 
 ## Layout
 
-Desktop is a single fixed 100dvh, three-column CSS grid — `rail` (`--rail-w: 248px`) / `line` (`--line-w: clamp(340px, 30vw, 440px)`) / `map` (`1fr`) — with the tray docked under the Line column via `grid-template-areas: "rail line map" / "rail tray map"`. `body { overflow: hidden }` means the page itself never scrolls; each pane (rail, Line, tray, map) owns its own internal scroll.
+Unchanged from the prior world, reverified: desktop is a single fixed 100dvh, three-column CSS grid — `rail` (`--rail-w: 248px`) / `line` (`--line-w: clamp(340px, 30vw, 440px)`) / `map` (`1fr`) — with the tray docked under the Line column. `body { overflow: hidden }` means the page never scrolls; each pane owns its own internal scroll.
 
-**Spacing is a real 4px grid now**, not the locally-set one-offs it used to be. `--space-1` through `--space-7` (4 / 8 / 12 / 16 / 20 / 24 / 32px) is the complete scale; `--pad` and `--gap` are semantic aliases onto it (`--pad: var(--space-5)` = 20px, panel padding; `--gap: var(--space-3)` = 12px, grid gaps like the totals row) rather than the standalone values they used to be — `--pad` in particular changed value in the process, from a bare 18px to the on-grid 20px. Every component padding, margin, and gap in the stylesheet was remapped onto this scale; a previous version of this document recorded "component-internal padding is set locally per component rather than drawn from a shared scale" as a settled decision — that decision is exactly what the user reacted to, and it no longer holds. A handful of sub-4px literals survive on purpose: 1–3px optical nudges (a badge's vertical padding, a baseline alignment, a border-adjacent offset) that aren't "spacing between things" in the rhythm sense the grid governs, and forcing them onto a 4px step would either do nothing or visibly worsen the alignment they're tuned for.
+**Spacing is a real 4px grid.** `--space-1` through `--space-7` (4/8/12/16/20/24/32px); `--pad` (`--space-5`, 20px) and `--gap` (`--space-3`, 12px) are semantic aliases onto it, not standalone values. A handful of sub-4px literals survive on purpose as optical nudges (a badge's vertical padding, a baseline alignment), not spacing-rhythm values.
 
-**Responsive breakpoints:**
-- **≤1180px** — the rail and Line columns narrow (`--rail-w: 216px`, `--line-w: clamp(300px, 30vw, 380px)`); the grid shape is unchanged.
-- **≤900px** — the grid collapses to one column and re-stacks as `rail → line → map → tray` (`grid-template-rows: auto auto 42dvh auto`), `body { overflow: auto }` re-enables page scroll, and every pane's `border-right` divider rotates to `border-bottom`. Totals switch from a stacked column to a 3-cell grid (`total-row { display: contents }`), the lead figure drops from `--fs-8` to `--fs-7` (39px→33px) and the secondary figure from `--fs-6` to `--fs-5` (27px→23px), the rail's two action rows go horizontal, and the map is given an explicit `min-height: 260px` since it is no longer sized by `1fr` inside a fixed-height grid.
+**Responsive breakpoints**, unchanged: **≤1180px** narrows the rail and Line columns; **≤900px** collapses to one column (`rail → line → map → tray`), re-enables page scroll, rotates every pane's `border-right` divider to `border-bottom`, and steps the totals down one type-scale role.
 
 ### Named Rules
-**The 4px-Grid Rule.** Every meaningful gap, padding, and margin in the system is one of the seven `--space-` steps (or the `--pad`/`--gap` aliases onto them). A sub-4px bare literal is reserved for optical nudges that aren't rhythm — not an escape hatch for a value that doesn't fit the grid.
+**The 4px-Grid Rule.** Every meaningful gap, padding, and margin is one of the seven `--space-` steps or the `--pad`/`--gap` aliases.
 
-**The One-Screen Rule.** Desktop never scrolls the page. A 100dvh grid with `overflow: hidden` on `body` keeps the whole day composed on one screen; only the panes scroll internally.
+**The One-Screen Rule.** Desktop never scrolls the page; only the panes scroll internally.
 
-**The Read-Only Overlay Rule.** The Line's SVG track is absolutely positioned over FullCalendar's real grid and only ever reads geometry (`getBoundingClientRect`) off the rendered DOM — it never sets `position` on `.fc-v-event` or `info.el`, because FullCalendar sizes events by absolute top/bottom to keep them proportional to duration, and overriding that makes an event grow to fit its text instead of its time span. The station connector and the hover/selection radius lift added since the animate pass follow the same discipline: they react to `hoverId`/`selectedId` state and repaint through the same `scheduleDraw()` loop, never touching FullCalendar's DOM beyond the `dataset.stopId` attribute `eventDidMount` already sets.
+**The Read-Only Overlay Rule.** The Line's SVG track is absolutely positioned over FullCalendar's real grid and only ever reads geometry (`getBoundingClientRect`) — it never sets `position` on `.fc-v-event` or `info.el`, because FullCalendar sizes events by absolute top/bottom to keep them proportional to duration. Confirmed unchanged in the current `_draw()`.
 
 ## Elevation & Depth
 
-Flat by material, not flat by accident: `box-shadow` does not appear as a real elevation device anywhere in the stylesheet. Depth is read entirely from two things — a 1px hairline border (`--hairline`) and which of four enamel steps a surface sits on. `--enamel-sink` (`#070C22`, recessed: rail, tray, map background, the Line's own track casing) is darker than `--enamel` (`#0B1230`, ground: page background, the Line's body) which is darker than `--enamel-raise` (`#0E1838`, raised at rest: station/event boxes, sheets, dropdowns) which is darker than `--enamel-hover` (`#12204A`, raised further on interaction: a hovered or selected station card, a hovered search result). A surface reads as "above" another by being a lighter shade of the same fired blue, never by a cast shadow.
+Flat by material, not flat by accident, and the metaphor still holds under the new palette: `box-shadow` is not a real elevation device anywhere except one deliberate exception (below). Depth reads from a hairline border and which of four paper steps a surface sits on — `--paper-sink` (recessed: rail, tray, map background) is the darkest/most-toned step; `--paper` (ground) sits above it; `--paper-hover` (a lift) sits above that; `--paper-raise` (raised, true white) is the lightest. The physical logic is consistent with the enamel world even though the absolute direction inverted: a surface reads as "above" by moving *toward the light* — brighter/whiter here, where the enamel world's "above" moved toward the light by getting less dark.
 
-The one exception: a pinned map marker's double ring is built from `box-shadow: 0 0 0 3px var(--porcelain), 0 0 0 5px var(--enamel)` — used to fake a second concentric circle a plain `border` can't produce on a MapLibre marker element, not to imply elevation.
+A scheduled Line station now sits permanently on the raised (Paper Raise) step at rest, unlike a tray siding, which starts at ground level (`--paper`) and only lifts to Paper Raise on hover — a station is already committed to the day; a siding is not yet.
+
+**The one exception, expanded.** In the prior enamel world, `box-shadow` existed for exactly one hack: faking a second concentric ring on a pinned map marker, because MapLibre markers can't produce that with a plain `border`. In the Paper Line, the exception is broader and more principled: `box-shadow` is used on **all three** parts of every marker — `.pin-tick` (`0 2px 6px rgba(20,24,20,.28)`), `.pin-stem` (`0 1px 3px rgba(20,24,20,.3)`), and `.pin-label` (`0 2px 6px rgba(20,24,20,.22)`) — regardless of state. The reason is structural, not a one-off fix: a marker floats over arbitrary, unpredictable tile colour and cannot separate from it by tonal step the way a card on the paper ground can, because there is no guaranteed paper ground underneath it. Every one of these shadows is an ink-strong-based rgba, not a token — `rgba(20,24,20, …)` is `--ink-strong` written out by hand at three different alphas, and is exempt from The Tokenised Derivative Rule for the same structural reason box-shadow itself is exempt from the no-shadow rule: it exists nowhere else to be consistent with.
 
 ### Named Rules
-**The Flat-By-Material Rule.** Depth is tonal, not cast. A surface is "above" another because it is a lighter step of the same enamel plus a hairline border — never a shadow, never a blur.
+**The Flat-By-Material Rule.** Depth is tonal, not cast. A surface is "above" another by sitting a lighter step of the same paper plus a hairline border — never a shadow, never a blur — everywhere except the marker exception below.
+
+**The Marker Shadow Exception.** `box-shadow` is permitted on `.pin-tick`, `.pin-stem`, and `.pin-label` alone, because a map marker sits over unpredictable tile colour and has no tonal ground to step against. It is not precedent for a shadow anywhere else in the system — every other surface has a real paper step to lean on instead.
 
 ## Shapes
 
-**Radius is deliberately split now, not absolute.** The system spent a finish pass at a hard `border-radius: 0` everywhere but true circles, and the user pushed back on the result directly — three escalating rounds of "harshly square," "stiff and boxy" — and, asked a structured question about it, chose to soften tool chrome while keeping the diagram itself hard-edged. `--radius-chrome: 5px` is the reversal: a single considered radius value, applied only to chrome, never to the diagram.
+**Radius is split, unchanged: chrome rounds, the diagram stays sharp.** `--radius-chrome` (5px) applies to: `.daynav`, `.delta`, `.btn` (every variant), `.rail-note`, `.pane-count`, `.search input`, `.search-results`, `.maplibregl-ctrl-attrib`, `.maplibregl-ctrl-group`, `.pin-label`, `dialog.sheet` and its `textarea`/`.field input`, `.siding`, and `.toast` — confirmed against the current stylesheet. It does **not** apply to `.fc-v-event` or anything inside `.line-pane`, the map's own route/track rendering, or `.pin-tick`/`.status-dot`/`.siding-tick` (already circular). Circles remain the system's only curve inside the diagram.
 
-**Chrome Radius, Diagram Stays Sharp.** `--radius-chrome` (5px) applies to: `.btn` (every variant), the Day Nav pill, `.search input`, `.search-results`/`.search-hit`, `dialog.sheet` and its textarea/field inputs, `.siding` cards, `.toast`, `.pane-count`, `.rail-note`, and `.maplibregl-ctrl-group` (the map's own zoom-control chrome). It explicitly does **not** apply to `.fc-v-event` or anything inside `.line-pane` (the Line has no card shape left to round — see Cards / Containers), the map's route/track rendering in `map.js`, or `.pin-tick`/`.status-dot` (already circular — these are the metaphor's own vocabulary, not softened chrome, and rounding a circle is a no-op anyway). The comment at the top of that section of `style.css` states the same split in the code itself: "the Line's diagram, its events, and the map's route rendering never use this; circles stay the only curve there."
+**The hairline hierarchy is two weights, not one.** `--hair` (1px) is the default: card borders, chip/badge outlines, minor rules. `--hair-wall` (2px) is reserved for the app's major structural walls — the rail/line-pane/tray panel dividers — because a system where every border is the same 1px, major walls included, reads as an undifferentiated ruled grid rather than a floor plan. The Line/Map seam goes one step further: it's conceptually the most important wall in the app (diagram vs. real cartography), so its colour overrides from `--rule` to the darker `--ink-dim`, on both the desktop `border-right` and the mobile `border-bottom` — the one wall in the system deliberately made stronger than the weight token alone would give it.
 
-Circles remain the system's only curve inside the diagram: station ticks on the Line, the siding tick, the map pin, the status dot. A hard rectangle is still the default shape everywhere chrome radius doesn't reach.
-
-The ground's hairline-mesh texture moved from a single global `body::before` to a `background-image` painted directly on the two enamel-sink panels (`.rail`, `.tray`), composited in one shorthand with `var(--enamel-sink)`. The global version was removed because it was never actually visible: every panel paints its own fully opaque ground colour on top of it, so a single fixed layer behind the whole app painted nothing anyone ever saw. The mesh itself is unchanged in shape (45°/90° lines, tiled 168×168px) with a slightly adjusted stroke (`#131b3f`, baked into the image rather than layered under a separate `opacity`).
+The rail and tray's ground texture is the same 45°/90° SVG hairline mesh from the prior world, tiled 168×168px, still composited in one shorthand with `var(--paper-sink)`. Its stroke (`#cfc7b3`) is baked directly into the data URI rather than tokenised — an SVG data URI can't reference a CSS custom property, so this one literal is structural, not drift.
 
 ### Named Rules
-**Chrome Radius, Diagram Stays Sharp.** Tool chrome (buttons, inputs, dialogs, toasts, the siding tray, the map's zoom control) rounds at `--radius-chrome` (5px). The diagram — the Line's stations, the map's route and track rendering — stays exactly `0`, with circles as its only curve. A new component reaching for a radius asks first which side of that line it's on; there is no third value.
+**Chrome Radius, Diagram Stays Sharp.** Tool chrome rounds at `--radius-chrome` (5px); the diagram and the map's own route/track rendering stay exactly `0`, with circles as their only curve.
+
+**The Two Weights Rule.** `--hair` is the default border weight everywhere; `--hair-wall` is reserved for major structural panel dividers, and the Line/Map seam additionally overrides its colour to `--ink-dim` because it is the single most important boundary in the layout.
 
 ## Components
 
 ### Buttons
-- **Shape:** `--radius-chrome` (5px) — a real corner now, not the hard-zero rectangle every other component used to share. 1px border (transparent or coloured depending on variant), padding `12px 16px` (`--space-3 --space-4`) uniformly across every variant.
-- **Primary:** scarlet fill, porcelain label text (uppercase, `ui-text`/13px, 600, 0.12em tracking). Hover deepens the fill to `#C4121F` — never lightens — and its arrow icon travels `translateX(3px)` on `--t-base`/`--ease-out`. `:active` inverts the whole button: fill becomes enamel, border and text become scarlet — a punched-out press state rather than a darken-on-click. While Optimise is working (`.is-working`) the arrow loops a `depart` keyframe (translateX −3px → 9px, opacity 0 → 1 → 0, 900ms, infinite) instead of sitting still, and the button ignores further clicks (`pointer-events: none`).
-- **Ghost:** transparent fill, `--hairline` border, ink-mid label; hover brightens the border and label toward porcelain.
-- **Line:** transparent fill, cobalt border, `--cobalt-ink` label (see Colors → Cobalt Ink); hover fills solid cobalt with porcelain text. This is the only button that borrows the flexible-station ink. Its state-machine use is the maps-handoff button — see Maps Handoff, below.
-- **Danger:** scarlet border at 40% alpha, scarlet label, pinned to the far side of a sheet's action row (`margin-right: auto`); hover fills solid scarlet.
-- **Press feedback:** every button presses `translateY(1px) scale(.99)` on `:active` — a small compression, not just a shift.
-- **Disabled:** `opacity: .32`, `cursor: not-allowed`, and `:active`'s press transform is suppressed.
-- Ordinary button-state transitions (background, border, colour, the press transform) run at `--t-fast` (120ms) on the system's original ease, `cubic-bezier(.2, .7, .3, 1)`; the two motions that travel — the arrow's hover slide and its working-state loop — use the second curve. See Motion System, below.
+- **Shape:** `--radius-chrome` (5px), 1px border (transparent or coloured by variant), uniform `12px 16px` padding (`--space-3 --space-4`) across every variant.
+- **Primary:** green fill, paper-raise label. Hover deepens to `--green-deep` (6.20:1) — never lightens. `:active` punches out: fill becomes paper, border and text become green-ink. While Optimise works (`.is-working`), the arrow icon loops a `depart` keyframe (900ms, infinite) — this is the one animation in the system that both loops *and* is tied to a real pending async call, not a decorative idle loop (see Motion System).
+- **Ghost:** transparent, rule border, ink-mid label; hover brightens border and label to ink-strong.
+- **Line:** transparent, green border, green-ink label at rest. Hover **and** `.is-ready` fill solid green with **ink-strong** text — not paper-raise. Measured, this pairing is **3.32:1**, under the system's own stated 4.5:1 AA floor (`PRODUCT.md`'s Accessibility & Inclusion section). This is recorded as an observed gap to fix, not a sanctioned exception; nothing in the direction contract asked for it, and it's the one button state in the system that doesn't clear the floor every other text/fill pairing does.
+- **Danger:** clay-rim border (40%-alpha clay), clay-ink label, pinned to the far side of a sheet's action row; hover fills solid clay with paper-raise text (5.72:1).
+- **Press feedback / disabled:** unchanged — `translateY(1px) scale(.99)` on `:active`; `opacity: .32` and no press transform when disabled.
 
 ### Chips / Badges
-- **Style:** no fill, 1px border in `currentColor`, `micro`/11px uppercase label at 0.1em tracking, weight 700 (state-asserting, per the Weight rule) — the one `micro`-step use that's unambiguously a label, never reading text.
-- **Variants:** `--pin` (porcelain, reads "Fixed") and `--unfit` (amber, reads "Won't fit"). There is no badge for the flexible/cobalt state — flexible is the diagram's unmarked default, so only the two exceptions (fixed, won't-fit) need a chip.
-- **Radius:** none. A badge is diagram content riding on a station, not tool chrome, so it stays outside the `--radius-chrome` split along with the rest of the Line.
+- **Style:** no fill, 1px `currentColor` border, `micro`/11px uppercase, weight 700 — unchanged shape from the prior world, recoloured.
+- **Variants:** `.ev-badge--pin` (ink-strong, "Fixed") and `.ev-badge--unfit` (clay, "Won't fit" / "Conflict"). No badge for the flexible/green state — flexible is still the diagram's unmarked default.
 
-### Cards / Containers
-The Line's stations are **not** a card — the animate pass de-boxed them. `.fc-v-event` sits on `background: transparent; border: 0` at rest; the label reads directly on the enamel ground, joined to the track by the tick and the SVG connector (see The Line, below) so tick, connector, and label read as one object instead of a dot floating beside a box. (`.fc-v-event` still transitions `background` on `--t-fast`/`--ease` and `transform` on `--t-fast`/`--ease-out` — the latter is what lets FullCalendar's native drag/resize interactions settle smoothly.) This is diagram, not chrome, so it carries no radius — `--radius-chrome` never reaches it, matching the Shapes split.
-- **Hover / selection surface:** a `::before` pseudo-element spans `inset: 0 0 0 -34px` — reaching back past the label all the way to the track — filled `--enamel-hover`, `opacity: 0` at rest, fading to `.62` on hover and `.9` on `.is-selected`. Because the surface sits under the tick, the connector, *and* the label, touching any part of a station lights the whole object.
-- **State moved off the border**, since there is no border left to carry it: `.is-unfit` recolours `.ev-name` amber; `.is-nogeo` recolours `.ev-name` ink-mid (a failed geocode is still communicated without a fourth colour — just by text tint now, not a dashed border). A pinned stop carries no card-level styling at all any more; "Fixed" is read from the Line's own porcelain ring and the badge alone.
-- **Coupling to record:** `LABEL_INSET` in `schedule.js` (`34`) must stay equal to `.fc-v-event`'s `margin-left` (`34px`). The SVG connector is drawn to `labelX − 3`, and `labelX` is derived from that same inset — change one without the other and the tick and its label drift apart again, reopening the "two objects" problem the animate pass fixed.
-- **Sidings** (the tray's unscheduled-stop cards, `.siding`) are still real boxed cards, unaffected by the de-boxing since a siding isn't on the diagram — enamel fill, hairline border, `--radius-chrome` (5px, since a siding is tool chrome, not the diagram), `grab` cursor. Hover raises the fill to enamel-raise, translates the row `3px`, and scales its tick ×1.35; a press (`:active`) translates `1px` and scales ×.995; a stop mid-drag drops to 40% opacity.
-- **No left-edge accent.** A coloured left border was tried on these containers during the finish pass and removed from five components. It is an explicit anti-pattern here: colour lives on the Line and the route, not as a decorative flag on a container.
+### Cards / Containers — The Line's Stations
+**Stations are cards again, and the reversal is deliberate and load-bearing.** In the enamel world, a station was explicitly "not a card" — transparent, borderless at rest, revealing a surface only on hover. In the Paper Line, `.fc-v-event` carries a real `background: var(--paper-raise)` and `border: var(--hair) solid var(--rule)` **at rest**. The code comment beside it says exactly why: *"the box just now has a real surface at rest instead of only revealing one on hover, which was the actual comprehension problem: an event with no background at all is indistinguishable from an empty grid row."* This is the same finding The Card Floor Rule exists to record, applied to the one component where it was most acute.
+
+A stale comment survives directly above this rule — `/* A station, not a card. Ink block on the left edge, porcelain label. */` — describing the *previous* world's doctrine, unchanged since the palette swap. It contradicts the code beneath it and should be corrected, not treated as current guidance; it is flagged here rather than silently followed.
+
+- **Hover / selection surface:** the old mechanism survives, layered on top of the now-permanent card: a `::before` spanning `inset: 0 0 0 -34px` (reaching back past the label to the tick) fills `--paper-hover`, animating from `opacity: 0` to `.85` on hover and `1` on `.is-selected` — these two figures are current, not the enamel world's `.62`/`.9`.
+- **Multi-select:** `.is-multiselected` draws a `1.5px` outline in green-ink, offset `-1.5px`.
+- **Hover border:** any hovered station's resting `--rule` border brightens to `--ink-mid`.
+- **State moved off the border, unchanged principle:** `.is-unfit` recolours `.ev-name` clay; `.is-nogeo` recolours it ink-mid. A pinned stop carries no card-level styling of its own; "Fixed" reads from the badge and the Line's own ink-strong ring alone.
+- **Coupling to record:** `LABEL_INSET` in `schedule.js` (`34`) must stay equal to `.fc-v-event`'s `margin-left` (`34px`); the SVG connector is drawn to `labelX − 3`. Unchanged, still load-bearing.
+- **Sidings** (the tray's cards, `.siding`) sit at ground level (`--paper`) at rest — not the raised step a scheduled station now permanently occupies — and lift to `--paper-raise` only on hover. The distinction is the metaphor: a siding is not yet on the day; a scheduled station already is.
+- **No left-edge accent.** Confirmed absent from the current stylesheet, same as before — colour lives on the Line and the route, not as a decorative flag on a container.
 
 ### Inputs / Fields
-- **Style:** enamel fill, 1px hairline border, `--radius-chrome` (5px), 8–12px padding (`--space-2`/`--space-3`), `ui-text`/13px.
-- **Focus:** the hairline border turns solid cobalt — the same ink as the system's universal `:focus-visible` outline, so focus reads identically everywhere.
-- **State note:** a small helper line under a field reports state in text colour — green for confirmed ("Located."), amber for failed ("Address not found."). This is the Attention-Ink Rule at work outside the diagram: amber flags "look here" on a form the same way it does on the now-line or a warn toast, without touching the Line's own won't-fit meaning.
+- **Style:** paper fill, hairline border, `--radius-chrome`, `--space-2`/`--space-3` padding, `ui-text`/13px.
+- **Focus:** the border turns solid green — the same ink as `:focus-visible` everywhere else.
+- **State note:** a helper line reports state in text colour — green for confirmed ("Located."), clay for failed ("Address not found.").
 
 ### Navigation
-The Day Nav is a three-cell hairline-bordered grid (34px / 1fr / 34px — a layout metric, unrelated to the type scale), itself rounded at `--radius-chrome` with `overflow: hidden` clipping the three cells to that corner: prev/next arrow buttons at the `compact-stat` step (19px, unweighted/400 — a named exception, see Weight) in ink-mid that fill hairline-grey and turn porcelain on hover, flanking a centre date cell in Archivo Narrow 700, `ui-text`/13px (a named exception to `ui-text`'s representative weight, see Weight), uppercase, porcelain, divided by vertical hairlines. A separate "Today" pill sits beneath at the `micro` step (11px, 0.14em, ink-dim) and turns `--cobalt-ink` on hover — the one piece of chrome text that borrows a state ink to signal "go."
+The Day Nav is unchanged in construction: a three-cell hairline grid (34px/1fr/34px), `overflow: hidden`-clipped to `--radius-chrome`, prev/next chevrons at `compact-stat` (19px, unweighted) in ink-mid turning ink-strong on a rule-coloured hover fill, flanking a centred date in Archivo Narrow 700/`ui-text` uppercase ink-strong. A separate "Today" pill sits beneath at `micro` (11px, ink-dim) and turns green-ink on hover.
 
 ### Maps Handoff
-The two-button "Copy Maps link" / "Open" pair is gone, replaced by one button (`#btnMapsAction`, `.btn--line.btn--wide`) that toggles between two states rather than offering two separate actions:
-- **At rest:** reads "Copy Maps link." Clicking it copies the current route's Maps URL.
-- **After a successful copy:** relabels to "Open" and gains `.is-ready`, which fills the button solid cobalt (`.btn--line.is-ready { background: var(--cobalt); color: var(--porcelain); }`, a rule declared immediately after `.btn--line:hover`) — the button visibly changes state rather than just accepting a second meaning silently. Its hover darkens further to `#3D6EFF`. Clicking again in this state opens the link instead of re-copying it.
-- **Reverting:** if the underlying route's stop *sequence* changes, the button drops `.is-ready` and reverts to "Copy Maps link" automatically, because the copied link is now stale. A same-order, time-only drag correctly does **not** revert it — the Maps URL encodes lat/lng stop order, not clock times — only an actual sequence change (a reorder, a deletion) invalidates it.
-- **Shape/style:** otherwise an ordinary `.btn--line` — transparent fill, cobalt border, `--cobalt-ink` label at rest, `--radius-chrome`, full-width in the rail.
+The single-button toggle (`#btnMapsAction`, `.btn--line.btn--wide`) is unchanged in behaviour from the prior world, recoloured: at rest it reads "Copy Maps link"; after a successful copy it relabels to "Open" and gains `.is-ready`, filling solid green with ink-strong text (see Buttons → Line, and its recorded contrast gap); a sequence change (not a same-order, time-only drag) reverts it automatically.
 
 ### Status & Feedback
-- **Status line** (`.status`): a `micro`/11px uppercase ink-dim label beside a 7px circular dot — green for ready, amber (pulsing) for busy, scarlet for error. The only animated element in the system besides toasts (`@keyframes pulse`, muted to 0.01ms under `prefers-reduced-motion`).
-- **Delta panel** (`.delta`): a hairline-bordered strip in a tinted, low-alpha version of the result colour, now `--radius-chrome`-rounded — green background/border at ~8%/30% alpha for "less driving," amber for "more driving" — holding a `compact-stat`/19px tabular figure and a `micro`/11px label. Gated by `[hidden]`, not a display toggle.
-- **Toasts**: enamel-raise, ink-dim border by default, `--radius-chrome`-rounded, recoloured per kind (warn → amber, error → scarlet border with `--scarlet-lift` text, ok → green border with `--green-lift` text). The lift tokens exist for exactly this: toast text needs to read clearly on the dark surface without matching the core route/confirmation ink exactly, so each gets a lighter, tokenized variant rather than an inline one-off.
+- **Status line** (`.status`): a `micro`/11px uppercase ink-dim label beside a 7px dot — green for ready; clay, pulsing, for busy; clay, static, for error. Busy and error now share one ink where the prior world gave them separate colours (amber vs. scarlet); the pulse is the only thing that tells them apart, a direct consequence of dropping to two state inks.
+- **Delta panel** (`.delta`): a `--radius-chrome`-rounded, hairline-bordered strip in a low-alpha tint of the result colour — green edge/wash for "less driving," clay edge/wash for "more driving" — holding a `compact-stat`/19px tabular figure and a `micro`/11px label.
+- **Toasts:** paper-raise, ink-dim border by default, `--radius-chrome`-rounded, recoloured per kind — warn → clay border/text, error → clay border with clay-ink text, ok → green border with (see the recorded `--green-lift` gap under Colors → Named Rules) text that currently falls back to plain ink rather than a distinct green.
 
 ### The Line (signature)
-The Line is an SVG overlay (`#lineOverlay`) painted on top of FullCalendar's real time grid — it never participates in layout, only reads it, redrawn on a request-animation-frame loop (`scheduleDraw`) whenever the grid scrolls, resizes, hovers, or its data changes.
-- **Horizontal position:** the track sits at the event column's live left edge (measured via `getBoundingClientRect`, never hardcoded — a fixed offset would paint over hour labels in any locale with wider ones) plus an 18px gutter (`TRACK_GUTTER`). The label column begins a further 34px out (`LABEL_INSET`) — the coupling this creates with `.fc-v-event`'s `margin-left` is recorded under Cards / Containers.
-- **Track:** one continuous two-pass stroke from the first to the last visible station — an 8px `#070C22` (enamel-sink) casing under a 4px `#E21D2D` (scarlet) ink line, both round-capped. These widths are hardcoded in `schedule.js`, not drawn from the CSS custom properties `--track-w`/`--tick-r` (both `6px`) — those two tokens are declared in `:root` but never referenced anywhere in the CSS or JS. The JS values above are the system's real, shipped track geometry.
-- **The connector.** Since the animate pass, every station also draws a `<line>` from the tick's edge to `labelX − 3` — resting at `--connector` (`#2A3A66`, `stroke-width: 1`), thickening to the station's own ink at `stroke-width: 1.6` when the station is hot (hovered or selected). Without it the tick and its label read as two separate objects; the connector is what makes touching one feel like touching the other.
-- **Hover / selection lift.** A station's ring radius scales ×1.34 and its inner dot grows from `r: 2` to `r: 2.8` when it is hovered or selected (`hoverId`/`selectedId`). Hover is driven by FullCalendar's `eventMouseEnter`/`eventMouseLeave`, which set `Schedule.hoverId` and call `onHoverStop` — wired in `app.js` to `map.setHover(id)`, which lifts the matching map pin at the same time (`.pin.is-hover .pin-tick { transform: scale(1.4) }`, the same value as a directly-hovered pin). Hovering a station on the Line and hovering its pin on the map are the same visual event, reachable from either surface.
-- **Drive-leg ticks:** for any gap ≥16px between two stations, a small enamel-filled tag punches over the track at the leg's midpoint — a 2.5px ink-dim dot plus a 9.5px Archivo label reading "`N min`" in ink-mid. A drive leg is always neutral-grey here, by explicit design: "amber is reserved for the unfit state alone — one ink, one meaning" (verbatim code comment), so even a very long leg never turns warning-coloured.
-- **Stations:** a fixed appointment draws as a larger hollow ring (r 7.5px at rest, 3px stroke, porcelain); a flexible stop draws as a smaller ring (r 5px at rest) with a solid dot core in the same ink, because "radius alone was a 2.5px distinction doing work colour should share" (verbatim code comment) — the filled core, not just the size, is what reads as "flexible" at a glance. A won't-fit stop reuses the flexible geometry recoloured amber. Every ring's centre is filled with the ground enamel, so a station reads as a punched hole in the track rather than a solid marker.
+The Line remains an SVG overlay (`#lineOverlay`) painted on top of FullCalendar's real time grid, redrawn on a `requestAnimationFrame` loop whenever the grid scrolls, resizes, hovers, or its data changes. What changed is what it draws.
+
+- **Colours are read live, not hardcoded.** `_draw()` opens by pulling every ink it needs off `getComputedStyle(document.documentElement)`, with hex fallbacks matching the current tokens. This exists specifically so a future palette change can't repeat what happened to this file during the current one: literals silently pointing at a dead theme.
+- **The track is drawn in weighted segments, not one continuous stroke.** For each station's occupied span (`st.y` to `st.yEnd`), a 7px round-capped green line marks "stopped here." Between stations, the gap is split proportionally: a 3px solid green segment for the drive (`driveMin / gapMin` of the pixel gap), then a 3px dashed (`2 4`) rule-coloured segment for whatever slack remains — only drawn once the pixel gap reaches 16px, coordinated with `.has-gap-tick` on the event so the CSS-side `.ev-drive` fallback never shows the same number twice.
+- **The duration rides a chip on the driven stretch**, not a floating label: an 11px Archivo/700 green-ink text on a rounded (`rx 3`) paper-raise rect with a 1px rule stroke, centred on the driven segment's midpoint.
+- **Slack, when there's room, gets its own label** — "N min free" in 11px ink-dim/400 — shown only when the slack is ≥10 minutes *and* the remaining pixel space is ≥22px.
+- **Stations:** radius `(pinned ? 7.5 : 5) × (hot ? 1.34 : 1)`; ink is clay if unfit/conflict, else ink-strong if pinned, else green. A 3px-stroke ring on a paper-raise fill (a punched hole, not a solid marker); a flexible station additionally fills a solid core (`r`: 2, or 2.8 when hot) in the same ink. A conflict adds a struck cross at `k = r × 0.62`.
+- **The tick-to-label connector has no dedicated colour token any more.** At rest it draws in `--rule` (read live, same as everything else); when the station is hovered or selected it thickens to `1.6px` and switches to the station's own ink. The prior world's bespoke `--connector` token doesn't exist in this palette — a genuine simplification, not an oversight.
 
 ### The Recoloured Basemap (signature)
-The basemap is never a stock tile set. `map.js` fetches OpenFreeMap's `dark` style and rewrites every paint colour by luminance into the interface's own enamel ramp before the map ever renders (`tintStyle` / `enamelise`). Ramp endpoints:
-- **Ground/default** (anything not water, road, or label): mixes `#070C22` (enamel) toward `#222E58` by `luminance × 1.25`, clamped to [0, 1].
-- **Water:** mixes `#0A163C` toward `#1E3A78` by `luminance × 0.7` — water stays dark across the whole source range.
-- **Road:** mixes `#070C22` toward `#354780` by `luminance × 1.9`, clamped to [0.12, 1] — the 0.12 floor keeps even the dimmest source road visible against the ground.
-- **Label:** mixes `#5A6C99` toward `#8FA3CC` by raw luminance, unclamped — preserving the source style's own text-size hierarchy (a capital city stays brighter than a hamlet).
-- **Halo:** flattened to plain enamel (`#070C22`) regardless of source luminance, so every text halo disappears into the ground instead of competing with it.
+`map.js` still refuses a stock tile set, but the source style changed from OpenFreeMap's `dark` to its `positron` (light) style, and the recolouring target moved from the enamel ramp to the paper one.
 
-Role is detected per layer: any paint key containing "halo" → halo; any `symbol`-type layer → label; a layer id matching `water|waterway|ocean|river` → water; matching `highway|road|rail|aeroway|transit|bridge|tunnel` → road; everything else → ground.
+- **Ground/default:** mixes a warm greige (`#D9D3C3`) toward Paper by `clamp(L, 0, 1)` — "luminance now maps the other way round: dark source pixels become the darker paper tones, bright ones approach the paper itself" (verbatim comment).
+- **Water:** mixes a soft sage (`#A8BEB6`) toward a dedicated water tone (`#C3D2CC`) by raw luminance.
+- **Road:** mixes a warm taupe (`#B2AA97`) toward Paper by `clamp(L × 0.85, 0, 1)`.
+- **Label:** mixes a deep tone (`#454E49` — the exact value of `--ink-mid`) toward a lighter grey-green (`#7A827C`) by raw, unclamped luminance, preserving the source style's own text-size hierarchy.
+- **Halo:** flattened to plain Paper regardless of source luminance, so every label halo disappears into the ground.
 
-The route itself is drawn as three MapLibre layers sharing the Line's own casing-then-ink construction, all on the only saturated, non-recoloured colours on the map: `dr-route-casing` (7px `#070C22` widening to 12px at zoom 14) sits underneath, always visible, and one of two ink layers sits on top of it — `dr-route-ink` (a gradiented `#E21D2D` line, 3.5px→6px, for a real OSRM route; see Motion System, below, for how it draws itself on) or `dr-route-est` (a flat, dashed `#E21D2D` line at 60% opacity, `[2, 1.6]` dash, for an estimated straight-line guess). The two ink layers are mutually exclusive and switched by `visibility`, never drawn together, so a guessed route is never mistaken for a real one.
+Role detection is unchanged: any paint key containing `halo` → halo; any `symbol`-type layer → label; an id matching `water|waterway|ocean|river` → water; matching `highway|road|rail|aeroway|transit|bridge|tunnel` → road; else ground.
 
-Map pins are a 20px porcelain circle (3px enamel ring) holding the stop's sequence number, inverted from every other numeral in the system (enamel-on-porcelain here, porcelain-on-enamel everywhere else) because the pin is the one light object sitting on a dark map. A pinned (fixed-appointment) stop gets a double-ring halo via `box-shadow` — the system's only real use of that property. An active (currently-focused) pin scales to 1.28× and switches to cobalt fill with porcelain text — picking up the Line's own focus ink — so it stays visually distinct from a won't-fit pin's amber, which the Attention-Ink Rule reserves for that one meaning alone. A hovered pin — or one whose matching station is hovered/selected back on the Line — scales ×1.4 on `--t-base`/`--ease-out`.
+**The route** is three MapLibre layers, casing-then-ink, but the casing flipped from the enamel world's dark base to `dr-route-casing` at flat white (`#FFFFFF`, 7px→12px by zoom) — a light casing under a saturated ink is the correct construction on a light basemap, the mirror image of dark-under-bright on a dark one. `dr-route-ink` carries a gradient (both stops `#0E7A46`, used purely as the vehicle for the draw-on animation) for a real OSRM route; `dr-route-est` carries a flat, dashed (`[2, 1.6]`), 60%-opacity `#0E7A46` line for a straight-line estimate. The two are mutually exclusive, switched by `visibility`.
+
+**These colours are literal strings, not CSS variables**, and that's structural rather than an oversight: MapLibre GL's paint properties are evaluated in a WebGL context and cannot consume `var()` at all, unlike `schedule.js`'s SVG overlay, which reads the live stylesheet. A future palette change must still hand-edit `map.js`'s `'#FFFFFF'`/`'#0E7A46'` literals (in three layer definitions plus `_drawOn()`'s gradient stops) in the same pass as `style.css` — the map is simply exempt from the *mechanism* schedule.js now uses, not from the *obligation* to stay in sync.
+
+**Pins** are a 26px paper-raise circle badge on a 9px stem (`.pin-stem`, 2.5px wide), anchored `bottom` so the stem's tip sits on the real coordinate, holding the stop's sequence number. At rest the ring is a 2.5px green stroke; a fixed appointment thickens it to 3px ink-strong; a won't-fit stop recolours the ring and label clay-ink; a conflict fills the badge solid clay with a struck-cross cut from paper-raise (the same cross construction as the Line's own conflict mark); an active (focused) pin fills solid green with paper-raise text. Hover/`.is-hover` scales the badge ×1.18; `.is-active` scales it ×1.24 — both figures changed from the prior world's 1.4/1.28, because the marker itself was rebuilt (badge + stem + label) rather than merely recoloured. A `.pin-label` replaces the browser's native `title` tooltip with a styled box (paper-raise, rule border, `--radius-chrome`) that only appears on hover/active.
 
 ### Motion System
 
-Five timing values, all named, split cleanly by what they're for. `--t-fast` (120ms) and `--t-base` (220ms) carry ordinary state change — hover, focus, colour, background — on the system's original ease, `cubic-bezier(.2, .7, .3, 1)`. `--t-move` (440ms) and `--ease-out` (`cubic-bezier(.16, 1, .3, 1)`) are reserved for spatial motion: travel, not just a state flip. Three focal moments carry that weight:
-- **Reorder** (`captureRects()` / `playReorder()` in `schedule.js`). `captureRects()` records every station's screen position before Optimise runs; `playReorder()` measures the new positions afterward and plays a FLIP transform on each one — `translateY` from old position to new, opacity `.75 → 1` — staggered `26ms` per station and capped at `160ms` of total stagger, so the whole day resequences as something watched rather than something reported. Nothing animates a layout property. The call hardcodes `460ms` and repeats the `--ease-out` curve as a literal string rather than reading the CSS custom properties — the Web Animations API used here can't resolve them — so the real duration is `460ms`, 20ms longer than the `--t-move` token it's conceptually tied to. Skipped entirely under reduced motion.
-- **Count-up** (`countTo()` in `app.js`). The delta figure counts from `0` to its saved/cost value over `620ms` on a hand-rolled ease-out cubic (`1 − (1−k)³`), so the saving reads as something that happened rather than a number that simply appeared. Writes the final value immediately under reduced motion.
-- **Route draw-on** (`_drawOn()` in `map.js`). The route paints itself on over `720ms`, the same ease-out-cubic shape, by sweeping a `line-gradient` stop across `line-progress` from 0 to 1. Jumps straight to the fully-drawn gradient under reduced motion.
+The five timing values and the split they encode are unchanged from the prior world: `--t-fast` (120ms) and `--t-base` (220ms) for ordinary state change on `--ease` (`cubic-bezier(.2, .7, .3, 1)`); `--t-move` (440ms) and `--ease-out` (`cubic-bezier(.16, 1, .3, 1)`) reserved for spatial motion — a reorder, a count-up, a route drawing itself on.
 
-**The MapLibre gradient/dash conflict.** `line-gradient` and `line-dasharray` are mutually exclusive on a single line layer — setting a dash on a gradiented layer silently kills the gradient and the route renders black. That is the reason the route is two separate ink layers rather than one layer toggled by paint property (see The Recoloured Basemap, above): `dr-route-ink` carries the gradient and the draw-on animation for a real route, `dr-route-est` carries the dash for an estimated one, and `visibility` switches between them. The source needs `lineMetrics: true` for `line-progress` to exist at all.
+- **Reorder** (`captureRects()`/`playReorder()` in `schedule.js`): a FLIP transform per station, staggered 26ms and capped at 160ms total, hardcoded at 460ms (20ms over the `--t-move` token, since the Web Animations API call can't read the CSS custom property). Skipped under reduced motion.
+- **Count-up** (`countTo()` in `app.js`): the delta figure counts from 0 over 620ms on a hand-rolled ease-out cubic. Writes the final value immediately under reduced motion.
+- **Route draw-on** (`_drawOn()` in `map.js`): 720ms, the same ease-out-cubic shape, sweeping a `line-gradient` stop across `line-progress`. Jumps to the fully-drawn state under reduced motion.
 
-**Supporting feedback**, all on the token family above: a siding translates `3px` on hover and its tick scales ×1.35; a siding being pressed translates `1px` and scales ×.995; every button presses `translateY(1px) scale(.99)` on `:active`; the Optimise button's arrow travels `translateX(3px)` on hover and loops a `depart` keyframe (`900ms`, `--ease`, infinite) while `.is-working`; a map pin scales ×1.4 on hover *or* when its matching station is hovered/selected on the Line — two different inputs producing the same visual event.
+**Looping animation is reserved for a real pending operation, not decoration.** Two loops exist in the current build: the busy status dot (`@keyframes pulse`, 1s) and the Optimise button's arrow while `.is-working` (`@keyframes depart`, 900ms). Both are tied to an actual in-flight async call and end when it resolves — neither is an idle-state screensaver. The system's now-line indicator stays a static clay dot rather than a pulsing one, which is the visible trace of a decorative loop that was tried there and rejected for competing with the Line's own focal moments; that rejection is the boundary a new looping animation should be checked against, not the count of loops currently running.
 
-**Reduced motion.** `@media (prefers-reduced-motion: reduce)` clamps every transition to `90ms` and every animation to a single iteration, and explicitly zeroes the spatial hover transforms on sidings, stations, and the Optimise arrow. That CSS override is a floor, not the whole mechanism: `playReorder()`, `countTo()`, and `_drawOn()` each check `prefers-reduced-motion` directly in JavaScript and take a static branch, because a FLIP `element.animate()` call and a `requestAnimationFrame` easing loop aren't reachable by a stylesheet override alone. The result the finish review verified: zero spatial animation under reduced motion, with every colour, opacity, and count-up value still landing on its final, legible state.
+**Reduced motion**, unchanged: `@media (prefers-reduced-motion: reduce)` clamps every transition to 90ms and every animation to one iteration; `playReorder()`, `countTo()`, and `_drawOn()` each check it directly in JavaScript and take a static branch, since a FLIP `element.animate()` call and a `requestAnimationFrame` loop aren't reachable from a stylesheet override alone.
 
 ## Do's and Don'ts
 
 ### Do:
-- **Do** keep colour concentrated on the Line and the route. Scarlet, cobalt, and amber only mean something when they appear on the diagram or the map — everywhere else, reach for the neutral ramp.
-- **Do** treat `--ink-dim` (`#7C8AAC`) and the primary hover `#C4121F` as contrast-derived values, not stylistic choices — 5.05:1 and 6.14:1 respectively are the floor, not a target to loosen.
-- **Do** round tool chrome at `--radius-chrome` (5px) and keep the diagram — the Line's stations, the map's route/track — at exactly `0` with circles as its only curve. This is a considered, user-chosen split, not the absolute zero-radius rule this document used to record; see Shapes.
-- **Do** reach for one of the eight named `--fs-` roles (`micro`/`ui-text`/`sub-head`/`compact-stat`/`wordmark`/`secondary-lead`/`mobile-lead`/`primary-lead`) and one of the three `--lh-` line-heights, never a bare pixel value. If a new component seems to need a size or line-height the scale doesn't have, that's a signal to reuse the nearest role, not add one.
-- **Do** read geometry off FullCalendar's DOM in the Line overlay; never write `position` back onto `.fc-v-event` or `info.el`.
-- **Do** run ordinary state change (hover, focus, colour, background) on `--t-fast` (120ms) or `--t-base` (220ms) with the system's original ease, `cubic-bezier(.2, .7, .3, 1)`. Reach for `--t-move` (440ms) and `--ease-out` (`cubic-bezier(.16, 1, .3, 1)`) only for something that travels — a reorder, a count-up, a route drawing itself on. The two curves are never swapped.
-- **Do** use amber freely in chrome for anything that genuinely needs attention — advisories, warnings, the now-line, busy status, a failed form field. The moment amber touches a station or a map pin, though, hold it to exactly one meaning: won't-fit.
-- **Do** keep the tick, connector, and label of a station acting as one object. If a future change gives any one of them its own independent hover/selection treatment, check it against `LABEL_INSET`/`margin-left` first — that's the coupling that keeps them aligned.
-- **Do** draw every gap, padding, and margin from `--space-1`–`--space-7` (or the `--pad`/`--gap` aliases). A one-off pixel value here is exactly the pattern the user reacted to when this document still said padding was set locally per component.
+- **Do** treat 1.31:1 (Paper Raise on Paper) as a floor, not a target to erode — see The Card Floor Rule. A material change that brings a card and its ground closer together than this is reopening the exact defect this palette exists to fix.
+- **Do** treat `--green-ink` (6.93:1) and `--clay-ink` (5.98:1) as the only legible way to set either line ink as small text; the raw values fail 4.5:1 on paper.
+- **Do** read Line and legend colours from `getComputedStyle`, never hardcode a hex in `schedule.js` or `app.js`'s `renderLegend()` — this is exactly the discipline the last palette swap needed and didn't have.
+- **Do** remember `map.js`'s route colours are literal strings, not CSS variables, and update them by hand alongside `style.css` on any future palette change — MapLibre's paint properties can't consume `var()`.
+- **Do** round tool chrome at `--radius-chrome` (5px) and keep the diagram and the map's route/track at exactly `0`.
+- **Do** reach for one of the eight named `--fs-` roles and one of the three `--lh-` line-heights, never a bare pixel value.
+- **Do** draw every gap, padding, and margin from `--space-1`–`--space-7` (or the `--pad`/`--gap` aliases).
+- **Do** use clay freely in chrome for anything that genuinely needs attention. The moment clay touches a station or a map pin, hold it to exactly one meaning: won't-fit or collision.
+- **Do** keep the tick, connector, and card of a station acting as one coupled object — check `LABEL_INSET`/`margin-left` before changing any one of them independently.
+- **Do** tokenise every derived alpha wash or hover fill the moment it's introduced, in the same pass as the primary it derives from.
 
 ### Don't:
-- **Don't** add a coloured left-edge accent to a card or container. It was built into five components during development and removed in the finish pass — it is an anti-pattern here, not an available style.
-- **Don't** add a shadow or a gradient anywhere. The one `box-shadow` in the system (a pinned map pin's double ring) exists because MapLibre markers can't fake a concentric ring with a border; it is not precedent for adding shadows elsewhere. Depth comes from the four enamel steps and a hairline, never from either.
-- **Don't** let amber mark a routine drive leg or a routine (non-unfit) station/pin state — that collision shipped once (an active map pin rendered identically to a won't-fit pin) and was fixed by moving the active state to cobalt. Amber's reach into general chrome attention-getting stops the moment it touches the diagram.
-- **Don't** rely on a bare `display` rule to hide something the app also sets `[hidden]` on — `[hidden] { display: none !important; }` in the reset is what makes every `.hidden`/`hidden`-attribute toggle in the system actually work (the delta panel, the search-results dropdown, the Maps-limit note, the map's loading scrim). A component-level `display: flex` on a hideable element silently defeats it.
-- **Don't** invent a fourth state ink for the Line or the map. Porcelain, cobalt, and amber are the complete set; a new state should reuse one of the three or be represented by shape/style (as the no-geocode text tint already does) rather than by colour.
-- **Don't** add a second ambient, looping animation. The busy status dot is the system's one permitted loop; an infinitely pulsing dot on the now-indicator was built, flagged by the detector as decoration competing with the Line's own focal moments, and removed. A static amber dot is the answer there, not a second lamp.
-- **Don't** give a station its own background/border card again. The tick-connector-label unit and its shared `::before` hover surface are what replaced the boxed event — reintroducing a per-state border would fight the connector for the eye's attention and undo the point of the de-boxing.
-- **Don't** round the diagram, and don't leave a new piece of tool chrome unrounded. `--radius-chrome` is a considered, user-chosen split, not a suggestion either side can drift across — a rounded station or a hard-cornered dialog are both drift, not variety.
-- **Don't** reintroduce a bare pixel font size, weight, or line-height outside the documented roles. The prior scale's failure mode was exactly this: one-off values accumulating component by component until "doesn't make sense" was the honest description.
+- **Don't** add a coloured left-edge accent to a card or container — confirmed still absent, still an anti-pattern here.
+- **Don't** add a shadow or a gradient anywhere except the map marker's three parts (`.pin-tick`/`.pin-stem`/`.pin-label`); every other surface has a paper tonal step to lean on instead.
+- **Don't** let clay mark a routine drive leg or a routine (non-unfit) station/pin state.
+- **Don't** invert `.maplibregl-ctrl-group button span`'s filter. That convention only made sense against the enamel world's dark control glyphs; inverting it on paper renders the zoom buttons white-on-white and they disappear.
+- **Don't** invent a third hue for the Line or the map. Green, clay, and ink-strong are the complete set.
+- **Don't** add a decorative, idle-state loop. Looping animation is reserved for feedback tied to a genuinely pending operation (busy status, an in-flight Optimise) — a pulsing now-line dot was tried and rejected for exactly this reason, and the static clay dot that replaced it is the standing evidence.
+- **Don't** give a station its own left-border or full-recolour treatment for state; state lives on `.ev-name`'s text colour and the badge, never a card-level border swap.
+- **Don't** trust the `/* A station, not a card. */` comment above `.fc-v-event` — it describes the previous world's doctrine and was not updated when the rule beneath it started giving every station a real paper-raise/rule surface at rest. Read the code, not the comment.
+- **Don't** treat `.btn--line`'s hover/`.is-ready` state (ink-strong text on green, 3.32:1) as a model to copy elsewhere — it's a recorded gap under this system's own 4.5:1 floor, not a sanctioned pairing.

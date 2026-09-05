@@ -23,11 +23,12 @@ const el = (n, attrs = {}) => {
 };
 
 export class Schedule {
-  constructor({ store, els, onEditStop, onHoverStop, onChange, toast }) {
+  constructor({ store, els, onEditStop, onHoverStop, onChange, driveSecondsBetween, toast }) {
     this.store = store;
     this.els = els;
     this.onEditStop = onEditStop;
     this.onHoverStop = onHoverStop;
+    this.driveSecondsBetween = driveSecondsBetween || (() => null);
     this.onChange = onChange;
     this.toast = toast;
     this.plan = null;
@@ -119,7 +120,25 @@ export class Schedule {
       eventResize: (info) => {
         const s = self.store.byId(info.event.extendedProps.stopId);
         if (!s) return;
-        const mins = Math.max(5, Math.round((info.event.end - info.event.start) / 60000));
+        let mins = Math.max(5, Math.round((info.event.end - info.event.start) / 60000));
+
+        // A stop may not grow into the drive it owes the next one. Unknown
+        // drive time (not geocoded, routing offline) enforces nothing.
+        const startMin = toMin(s.start);
+        const { next } = self._neighbours(s.id, startMin);
+        if (next) {
+          const d = self._driveMin(s, next);
+          if (d != null) {
+            const maxDwell = toMin(next.start) - d - startMin;
+            if (mins > maxDwell) {
+              const capped = Math.max(5, Math.round(maxDwell));
+              if (capped < mins) {
+                self.toast?.(`Capped at ${capped} min — the drive to "${next.name || next.address}" needs ${Math.round(d)} min.`, 'info');
+              }
+              mins = capped;
+            }
+          }
+        }
         self.store.update(s.id, { dwell: mins });
       },
       eventClick: (info) => {
@@ -215,11 +234,76 @@ export class Schedule {
     this.cal.refetchEvents();
   }
 
+  /** Driving minutes between two stops, or null when it isn't known. */
+  _driveMin(a, b) {
+    const secs = this.driveSecondsBetween(a, b);
+    return secs == null ? null : secs / 60;
+  }
+
+  /** The stops immediately before and after a given time, excluding one id. */
+  _neighbours(excludeId, atMin) {
+    const others = this.store.scheduled().filter((s) => s.id !== excludeId);
+    let prev = null, next = null;
+    for (const o of others) {
+      const st = toMin(o.start);
+      if (st <= atMin) { if (!prev || st > toMin(prev.start)) prev = o; }
+      else if (!next || st < toMin(next.start)) next = o;
+    }
+    return { prev, next };
+  }
+
+  /**
+   * The window a stop may legally start in, given the commute it owes its
+   * neighbours. A null bound means "not known" — the matrix hasn't got that
+   * pair yet — and an unknown bound is never enforced.
+   */
+  _legalWindow(stop, atMin) {
+    const dwell = Math.max(5, stop.dwell || 30);
+    const { prev, next } = this._neighbours(stop.id, atMin);
+    let earliest = null, latest = null;
+    if (prev) {
+      const d = this._driveMin(prev, stop);
+      if (d != null) earliest = toMin(prev.start) + Math.max(5, prev.dwell || 30) + d;
+    }
+    if (next) {
+      const d = this._driveMin(stop, next);
+      if (d != null) latest = toMin(next.start) - d - dwell;
+    }
+    return { prev, next, earliest, latest, dwell };
+  }
+
+  /** Exchange two stops' start times, then push the second clear of the commute. */
+  _swap(a, b) {
+    const aStart = toMin(a.start), bStart = toMin(b.start);
+    this.store.batch(() => {
+      this.store.update(a.id, { start: toHM(bStart) }, { checkpoint: false, silent: true });
+      this.store.update(b.id, { start: toHM(aStart) }, { checkpoint: false, silent: true });
+    });
+    // After the exchange the pair drives in the opposite direction, which can
+    // cost more than the slot they traded allows — settle the later one.
+    // `a` received bStart and `b` received aStart, so whichever now holds the
+    // SMALLER time is chronologically first. Getting this backwards pushes the
+    // wrong stop and turns a clean trade into a shove.
+    const first = bStart < aStart ? a : b;
+    const second = bStart < aStart ? b : a;
+    const d = this._driveMin(first, second);
+    if (d == null) return;
+    const need = toMin(first.start) + Math.max(5, first.dwell || 30) + d;
+    if (toMin(second.start) < need) {
+      this.store.update(second.id, { start: toHM(need) });
+    }
+  }
+
   /**
    * A drag on a stop that's part of an active multi-selection moves every
    * selected stop by the same time delta — gcal-plus's handleBatchDrag,
    * ported. Dragging a stop that ISN'T selected is an ordinary single move
    * and never disturbs an unrelated existing selection.
+   *
+   * A single move is also where the commute constraint is enforced: a stop
+   * may not land inside the drive time it owes a neighbour. Dropping it
+   * short of that clamps to the earliest (or latest) legal minute; dragging
+   * it clean past a neighbour is read as intent to reorder, and the two swap.
    */
   _commitMove(info, jsEvent) {
     const s = this.store.byId(info.event.extendedProps.stopId);
@@ -239,9 +323,46 @@ export class Schedule {
     }
 
     const d = info.event.start;
-    // A pinned stop dragged by hand is the user restating the appointment, so
-    // the new time becomes the new anchor rather than being refused.
-    this.store.update(s.id, { day: this.store.day, start: toHM(d.getHours() * 60 + d.getMinutes()) });
+    const wanted = d.getHours() * 60 + d.getMinutes();
+    // Neighbours are resolved from where the stop STARTED, not where it landed.
+    // Resolving them at the drop position lets a neighbour you just dragged
+    // past silently reclassify from `next` to `prev`, which makes "did this
+    // drag cross something?" unanswerable and the swap unreachable.
+    const { prev, next, earliest, latest, dwell } = this._legalWindow(s, toMin(s.start));
+
+    // Dragged clean past a neighbour: read as "put these in the other order".
+    if (prev && wanted < toMin(prev.start)) {
+      if (prev.pinned) {
+        this.store.update(s.id, { day: this.store.day, start: toHM(earliest ?? wanted) });
+        this.toast?.(`"${prev.name || prev.address}" is a fixed appointment — ${s.name || 'this stop'} placed after it.`, 'warn');
+      } else {
+        this._swap(s, prev);
+        this.toast?.(`Swapped with "${prev.name || prev.address}".`, 'ok');
+      }
+      return;
+    }
+    if (next && wanted > toMin(next.start)) {
+      if (next.pinned) {
+        this.store.update(s.id, { day: this.store.day, start: toHM(latest ?? wanted) });
+        this.toast?.(`"${next.name || next.address}" is a fixed appointment — ${s.name || 'this stop'} placed before it.`, 'warn');
+      } else {
+        this._swap(s, next);
+        this.toast?.(`Swapped with "${next.name || next.address}".`, 'ok');
+      }
+      return;
+    }
+
+    // Otherwise hold the commute: clamp into the legal window.
+    let start = wanted;
+    let clampedTo = null;
+    if (earliest != null && start < earliest) { start = earliest; clampedTo = prev; }
+    else if (latest != null && start > latest) { start = latest; clampedTo = next; }
+
+    this.store.update(s.id, { day: this.store.day, start: toHM(start) });
+    if (clampedTo) {
+      const mins = Math.round(this._driveMin(clampedTo === prev ? prev : s, clampedTo === prev ? s : next) || 0);
+      this.toast?.(`Held ${mins} min clear of "${clampedTo.name || clampedTo.address}" for the drive.`, 'info');
+    }
   }
 
   _events() {

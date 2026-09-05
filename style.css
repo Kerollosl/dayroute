@@ -27,6 +27,19 @@
   --green-ink:  #095430;  /* green as small text: raw --green is 4.13:1 on paper */
   --clay:       #B0431F;  /* the complement — attention, won't-fit, error */
   --clay-ink:   #8F3517;  /* clay as small text */
+  --green-deep: #0A5C34;  /* pressed/hover state of a green fill */
+
+  /* Derived state washes. Tokenised rather than left as inline hex: the last
+     palette swap left a dozen bare literals silently pointing at the dead
+     theme, and these are exactly that shape of value. */
+  --green-edge: #0E7A4655;
+  --green-wash: #0E7A4614;
+  --green-tint: #0E7A4622;
+  --clay-edge:  #B0431F55;
+  --clay-wash:  #B0431F12;
+  --clay-rim:   #B0431F66;
+  --scrim:      #141814B8;
+  --paper-veil: #FFFFFFCC;
 
   /* Roles ------------------------------------------------------------------ */
   --route:    var(--green);
@@ -91,7 +104,7 @@
   color-scheme: light;
 }
 
-::selection { background: var(--green); color: var(--ink-strong); }
+::selection { background: var(--green); color: var(--paper-raise); }
 * { scrollbar-width: thin; scrollbar-color: var(--rule) transparent; }
 *::-webkit-scrollbar { width: 9px; height: 9px; }
 *::-webkit-scrollbar-thumb { background: var(--rule); }
@@ -229,9 +242,9 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .
   display: flex; align-items: baseline; gap: var(--space-2);
   animation: delta-in var(--t-move) var(--ease-out);
   padding: var(--space-2);
-  border: var(--hair) solid #0E7A4655;
+  border: var(--hair) solid var(--green-edge);
   border-radius: var(--radius-chrome);
-  background: #0E7A4614;
+  background: var(--green-wash);
 }
 .delta-figure {
   font-family: "Archivo Narrow", Archivo, sans-serif;
@@ -243,7 +256,7 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .
   font-size: var(--fs-1); font-weight: 400; line-height: var(--lh-label);
   letter-spacing: .13em; text-transform: uppercase; color: var(--ink-mid);
 }
-.delta[data-dir="worse"] { border-color: #B0431F55; background: #B0431F12; }
+.delta[data-dir="worse"] { border-color: var(--clay-edge); background: var(--clay-wash); }
 .delta[data-dir="worse"] .delta-figure { color: var(--clay); }
 /* The number stops moving either way; this marks the instant it settles so
    "still counting" and "done" are never the same ambiguous stillness. */
@@ -279,18 +292,18 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .
   35%  { opacity: 1; }
   100% { transform: translateX(9px); opacity: 0; }
 }
-.btn--primary:hover:not(:disabled) { background: #0A5C34; }
+.btn--primary:hover:not(:disabled) { background: var(--green-deep); }
 .btn--primary:active:not(:disabled) { background: var(--paper); border-color: var(--green); color: var(--green-ink); }
 
 .btn--ghost { border-color: var(--rule); color: var(--ink-mid); }
 .btn--ghost:hover:not(:disabled) { border-color: var(--ink-mid); color: var(--ink-strong); }
 
 .btn--line { border-color: var(--green); color: var(--green-ink); padding-inline: var(--space-4); }
-.btn--line:hover:not(:disabled) { background: var(--green); color: var(--ink-strong); }
-.btn--line.is-ready { background: var(--green); color: var(--ink-strong); }
-.btn--line.is-ready:hover:not(:disabled) { background: #0A5C34; }
+.btn--line:hover:not(:disabled) { background: var(--green); color: var(--paper-raise); }
+.btn--line.is-ready { background: var(--green); color: var(--paper-raise); }
+.btn--line.is-ready:hover:not(:disabled) { background: var(--green-deep); }
 
-.btn--danger { border-color: #B0431F66; color: var(--clay-ink); margin-right: auto; }
+.btn--danger { border-color: var(--clay-rim); color: var(--clay-ink); margin-right: auto; }
 .btn--danger:hover { background: var(--clay); color: var(--paper-raise); border-color: var(--clay); }
 
 .btn--wide { width: 100%; }
@@ -299,7 +312,7 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .
   font-size: var(--fs-1); font-weight: 400; line-height: var(--lh-read);
   color: var(--clay);
   padding: var(--space-2) var(--space-3);
-  border: var(--hair) solid #B0431F55;
+  border: var(--hair) solid var(--clay-edge);
   border-radius: var(--radius-chrome);
 }
 
@@ -390,13 +403,13 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .
   width: 7px; height: 7px; border-radius: 50%; background: var(--clay);
 }
 .fc .fc-timegrid-now-indicator-arrow { display: none; }
-.fc .fc-highlight { background: #0E7A4622; }
+.fc .fc-highlight { background: var(--green-tint); }
 
 /* Equal-width side-by-side columns for concurrent events, not FC's default
    cascading stagger — a conflict is exactly the moment two events most need
    to read cleanly, not squeeze into a decreasing-width waterfall. */
 
-/* A station, not a card. Ink block on the left edge, porcelain label. */
+/* A station raised off the paper. Ink block on the left edge, deepened-ink label. */
 .fc .fc-timegrid-event,
 .fc .fc-v-event {
   background: var(--paper-raise);
@@ -581,7 +594,7 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .
   font-size: var(--fs-1); letter-spacing: .14em; text-transform: uppercase;
 }
 .maplibregl-ctrl-attrib {
-  background: #FFFFFFCC !important; color: var(--ink-mid) !important;
+  background: var(--paper-veil) !important; color: var(--ink-mid) !important;
   font-size: var(--fs-1) !important; border-radius: var(--radius-chrome) !important;
 }
 .maplibregl-ctrl-attrib a { color: var(--ink-mid) !important; }
@@ -669,7 +682,7 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .
   color: var(--ink); padding: 0; width: min(460px, 92vw);
   border-radius: var(--radius-chrome);
 }
-.sheet::backdrop { background: #141814B8; }
+.sheet::backdrop { background: var(--scrim); }
 .sheet-inner { padding: var(--space-5); display: flex; flex-direction: column; gap: var(--space-3); }
 .sheet-title {
   font-family: "Archivo Narrow", Archivo, sans-serif;
@@ -725,7 +738,7 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .
 }
 .toast[data-kind="warn"]  { border-color: var(--clay); color: var(--clay); }
 .toast[data-kind="error"] { border-color: var(--clay); color: var(--clay-ink); }
-.toast[data-kind="ok"]    { border-color: var(--green); color: var(--green-lift); }
+.toast[data-kind="ok"]    { border-color: var(--green); color: var(--green-ink); }
 @keyframes toast-in { from { opacity: 0; transform: translateY(8px); } }
 
 /* ----------------------------------------------------------- responsive -- */
