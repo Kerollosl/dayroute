@@ -94,7 +94,7 @@ export class Tray {
       this.store.batch(() => {
         for (const r of rows) this.store.add({ name: r.name || r.address, address: r.address }, { checkpoint: false });
       });
-      this.toast(`${rows.length} stop${rows.length > 1 ? 's' : ''} added to sidings. Locating…`);
+      this.toast(`${rows.length} stop${rows.length > 1 ? 's' : ''} added. Finding addresses…`);
       this._geocodePending();
     });
 

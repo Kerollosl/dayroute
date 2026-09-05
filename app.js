@@ -80,6 +80,19 @@ function status(text, state = 'ok') {
   els.netStatus.dataset.state = state;
 }
 
+/**
+ * The day starts when the day starts — at the earliest stop already on the
+ * board, not at a fixed 08:00. Optimising used to walk the clock from
+ * DAY_START_MIN regardless, so a 10am-to-4pm day was pulled back two hours
+ * purely because the window said it could be. "Least driving" never meant
+ * "start earlier". The end bound stays fixed: without it the tail gap is
+ * infinite and nothing is ever unfit.
+ */
+function dayWindow(mstops) {
+  const starts = mstops.map((s) => s.startMin).filter((v) => Number.isFinite(v));
+  return starts.length ? { dayStart: Math.min(...starts) } : {};
+}
+
 function renderLegend() {
   els.legend.textContent = '';
   // Read straight from the stylesheet so the legend can never drift from the
@@ -87,9 +100,9 @@ function renderLegend() {
   const cs = getComputedStyle(document.documentElement);
   const v = (n, f) => cs.getPropertyValue(n).trim() || f;
   const items = [
-    [v('--ink-strong', '#141814'), 'Fixed'],
-    [v('--green', '#0E7A46'), 'Flexible'],
-    [v('--clay', '#B0431F'), "Won't fit"],
+    [v('--text', '#1D1D1F'), 'Fixed'],
+    [v('--accent', '#0B7A4B'), 'Flexible'],
+    [v('--danger', '#D93025'), "Won't fit"],
   ];
   for (const [c, label] of items) {
     const i = document.createElement('span');
@@ -190,7 +203,7 @@ function setMapsButtonState() {
   const stale = copiedSignature !== null && copiedSignature !== linkSignature(links);
   if (stale) copiedSignature = null;
   const isOpenState = !stale && copiedSignature !== null && links.length > 0;
-  els.btnMapsActionLabel.textContent = isOpenState ? 'Open' : 'Copy Maps link';
+  els.btnMapsActionLabel.textContent = isOpenState ? 'Open in Maps' : 'Copy link';
   els.btnMapsAction.classList.toggle('is-ready', isOpenState);
   els.btnMapsAction.disabled = !links.length;
 }
@@ -242,7 +255,7 @@ async function recompute({ fit = false, unfitIds = null } = {}) {
   lastMatrix = m;
   const mstops = withIndex(routable, m);
   const order = mstops.map((_, i) => i);           // time order IS the route order
-  const p = R.plan(order, mstops, m);
+  const p = R.plan(order, mstops, m, dayWindow(mstops));
 
   const seqById = new Map();
   const driveInById = new Map();
@@ -298,13 +311,14 @@ async function optimise() {
 
   els.btnOptimize.disabled = true;
   els.btnOptimize.classList.add('is-working');
-  status('Optimising…', 'busy');
+  status('Optimizing…', 'busy');
   schedule.captureRects();
   try {
     const m = await R.fetchMatrix(routable);
     const mstops = withIndex(routable, m);
-    const before = R.plan(mstops.map((_, i) => i), mstops, m);
-    const { order, unfit } = R.optimize(mstops, m);
+    const win = dayWindow(mstops);
+    const before = R.plan(mstops.map((_, i) => i), mstops, m, win);
+    const { order, unfit } = R.optimize(mstops, m, win);
 
     // The commit and the headline totals use `order` as-is — an unfit stop's
     // real time is never touched. The savings figure alone needs a fair
@@ -313,7 +327,7 @@ async function optimise() {
     // "less driving" for a stop that just got dropped from the route, not one
     // that was actually driven more efficiently.
     const fairOrder = unfit.length ? R.comparisonOrder(order, unfit, mstops, m) : order;
-    const after = R.plan(fairOrder, mstops, m);
+    const after = R.plan(fairOrder, mstops, m, win);
 
     const unfitIds = new Set(unfit.map((i) => routable[i].id));
 

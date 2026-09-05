@@ -11,9 +11,19 @@ const STYLE_URL = 'https://tiles.openfreemap.org/styles/positron';
 // The basemap is recoloured onto the same paper the interface is printed on,
 // so the map is a panel of the same document rather than a foreign dark tile
 // set dropped into it.
-const PAPER  = { r: 0xE6, g: 0xE1, b: 0xD4 };
-const DEEP   = { r: 0x45, g: 0x4E, b: 0x49 };
-const WATER  = { r: 0xC3, g: 0xD2, b: 0xCC };
+// Basemap anchors. Neutral greys with roads resolving to white and one cool
+// water — the light-map convention both Apple and Google settled on. These are
+// deliberately NOT the page's own ground: the map has to read as its own
+// surface beside a white panel, not as more page.
+const ROUTE_INK = '#0B7A4B';   /* --accent; the route, and only the route */
+const PAPER  = { r: 0xF1, g: 0xF2, b: 0xF4 };  /* ground, bright end */
+const GROUND = { r: 0xDF, g: 0xE1, b: 0xE5 };  /* ground, dark end */
+const ROAD   = { r: 0xD2, g: 0xD5, b: 0xDA };  /* road casing, dark end */
+const WHITE  = { r: 0xFF, g: 0xFF, b: 0xFF };  /* road fill, bright end */
+const DEEP   = { r: 0x3C, g: 0x40, b: 0x43 };  /* label ink */
+const LABEL  = { r: 0x8A, g: 0x8F, b: 0x94 };  /* label, bright end */
+const WATER  = { r: 0xC9, g: 0xDE, b: 0xEC };
+const WATER_LO = { r: 0xA9, g: 0xC6, b: 0xDA };
 
 const ROUTE_SRC = 'dr-route';
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
@@ -62,11 +72,11 @@ function enamelise(str, role) {
   // Light ground: luminance now maps the other way round — dark source pixels
   // become the darker paper tones, bright ones approach the paper itself.
   let out;
-  if (role === 'water') out = mix({ r: 0xA8, g: 0xBE, b: 0xB6 }, WATER, L);
-  else if (role === 'road') out = mix({ r: 0xB2, g: 0xAA, b: 0x97 }, PAPER, clamp(L * 0.85, 0, 1));
-  else if (role === 'label') out = mix(DEEP, { r: 0x7A, g: 0x82, b: 0x7C }, L);
-  else if (role === 'halo') out = PAPER;
-  else out = mix({ r: 0xD9, g: 0xD3, b: 0xC3 }, PAPER, clamp(L, 0, 1));
+  if (role === 'water') out = mix(WATER_LO, WATER, L);
+  else if (role === 'road') out = mix(ROAD, WHITE, clamp(L * 0.9, 0, 1));
+  else if (role === 'label') out = mix(DEEP, LABEL, L);
+  else if (role === 'halo') out = WHITE;
+  else out = mix(GROUND, PAPER, clamp(L, 0, 1));
   return c.a < 1 ? `rgba(${out.r},${out.g},${out.b},${c.a})` : hex(out);
 }
 
@@ -164,7 +174,7 @@ export class RouteMap {
       id: 'dr-route-ink', type: 'line', source: ROUTE_SRC,
       layout: { 'line-cap': 'round', 'line-join': 'round' },
       paint: {
-        'line-gradient': ['interpolate', ['linear'], ['line-progress'], 0, '#0E7A46', 1, '#0E7A46'],
+        'line-gradient': ['interpolate', ['linear'], ['line-progress'], 0, ROUTE_INK, 1, ROUTE_INK],
         'line-width': ['interpolate', ['linear'], ['zoom'], 8, 3.5, 14, 6],
       },
     });
@@ -172,7 +182,7 @@ export class RouteMap {
       id: 'dr-route-est', type: 'line', source: ROUTE_SRC,
       layout: { 'line-cap': 'butt', 'line-join': 'round', visibility: 'none' },
       paint: {
-        'line-color': '#0E7A46',
+        'line-color': ROUTE_INK,
         'line-width': ['interpolate', ['linear'], ['zoom'], 8, 3, 14, 5],
         'line-opacity': 0.6,
         'line-dasharray': [2, 1.6],
@@ -222,9 +232,9 @@ export class RouteMap {
       const q = Math.min(0.99, Math.max(0.005, p));
       const d = 0.004;
       this.map.setPaintProperty('dr-route-ink', 'line-gradient', p >= 1
-        ? ['interpolate', ['linear'], ['line-progress'], 0, '#0E7A46', 1, '#0E7A46']
+        ? ['interpolate', ['linear'], ['line-progress'], 0, ROUTE_INK, 1, ROUTE_INK]
         : ['interpolate', ['linear'], ['line-progress'],
-            0, '#0E7A46', q, '#0E7A46', q + d, clear, 1, clear]);
+            0, ROUTE_INK, q, ROUTE_INK, q + d, clear, 1, clear]);
     };
     if (reduced) { paint(1); return; }
     const t0 = performance.now();

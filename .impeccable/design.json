@@ -1,637 +1,159 @@
 {
-  "schemaVersion": 2,
-  "generatedAt": "2026-09-05T05:09:47Z",
-  "title": "Design System: dayroute — The Paper Line",
-  "extensions": {
-    "colorMeta": {
-      "green": {
-        "role": "primary",
-        "displayName": "Green — Route & Flexible Ink",
-        "canonical": "#0E7A46",
-        "tonalRamp": [
-          "#084527",
-          "#0E7945",
-          "#14AD63",
-          "#1AE181",
-          "#4BEA9E",
-          "#80F0BA",
-          "#B4F6D6",
-          "#E8FCF3"
-        ]
-      },
-      "green-ink": {
-        "role": "primary",
-        "displayName": "Green Ink",
-        "canonical": "#095430",
-        "tonalRamp": [
-          "#074527",
-          "#0D7A46",
-          "#13AE64",
-          "#18E382",
-          "#4AEC9E",
-          "#7FF1BA",
-          "#B3F7D6",
-          "#E8FDF3"
-        ]
-      },
-      "green-deep": {
-        "role": "primary",
-        "displayName": "Green Deep",
-        "canonical": "#0A5C34",
-        "tonalRamp": [
-          "#084527",
-          "#0D7A45",
-          "#13AE62",
-          "#19E380",
-          "#4AEB9D",
-          "#7FF1B9",
-          "#B3F7D6",
-          "#E8FDF2"
-        ]
-      },
-      "green-edge": {
-        "role": "primary",
-        "displayName": "Green Edge",
-        "canonical": "#0E7A4655",
-        "tonalRamp": [
-          "#084527",
-          "#0E7945",
-          "#14AD63",
-          "#1AE181",
-          "#4BEA9E",
-          "#80F0BA",
-          "#B4F6D6",
-          "#E8FCF3"
-        ]
-      },
-      "green-wash": {
-        "role": "primary",
-        "displayName": "Green Wash",
-        "canonical": "#0E7A4614",
-        "tonalRamp": [
-          "#084527",
-          "#0E7945",
-          "#14AD63",
-          "#1AE181",
-          "#4BEA9E",
-          "#80F0BA",
-          "#B4F6D6",
-          "#E8FCF3"
-        ]
-      },
-      "green-tint": {
-        "role": "primary",
-        "displayName": "Green Tint",
-        "canonical": "#0E7A4622",
-        "tonalRamp": [
-          "#084527",
-          "#0E7945",
-          "#14AD63",
-          "#1AE181",
-          "#4BEA9E",
-          "#80F0BA",
-          "#B4F6D6",
-          "#E8FCF3"
-        ]
-      },
-      "clay": {
-        "role": "secondary",
-        "displayName": "Clay — Attention Ink",
-        "canonical": "#B0431F",
-        "tonalRamp": [
-          "#41190B",
-          "#732C14",
-          "#A43E1D",
-          "#D65126",
-          "#E17755",
-          "#EA9F86",
-          "#F2C6B8",
-          "#FBEEE9"
-        ]
-      },
-      "clay-ink": {
-        "role": "secondary",
-        "displayName": "Clay Ink",
-        "canonical": "#8F3517",
-        "tonalRamp": [
-          "#42180B",
-          "#742B13",
-          "#A63E1B",
-          "#D95023",
-          "#E37752",
-          "#EB9E85",
-          "#F3C6B7",
-          "#FBEEE9"
-        ]
-      },
-      "clay-edge": {
-        "role": "secondary",
-        "displayName": "Clay Edge",
-        "canonical": "#B0431F55",
-        "tonalRamp": [
-          "#41190B",
-          "#732C14",
-          "#A43E1D",
-          "#D65126",
-          "#E17755",
-          "#EA9F86",
-          "#F2C6B8",
-          "#FBEEE9"
-        ]
-      },
-      "clay-wash": {
-        "role": "secondary",
-        "displayName": "Clay Wash",
-        "canonical": "#B0431F12",
-        "tonalRamp": [
-          "#41190B",
-          "#732C14",
-          "#A43E1D",
-          "#D65126",
-          "#E17755",
-          "#EA9F86",
-          "#F2C6B8",
-          "#FBEEE9"
-        ]
-      },
-      "clay-rim": {
-        "role": "secondary",
-        "displayName": "Clay Rim",
-        "canonical": "#B0431F66",
-        "tonalRamp": [
-          "#41190B",
-          "#732C14",
-          "#A43E1D",
-          "#D65126",
-          "#E17755",
-          "#EA9F86",
-          "#F2C6B8",
-          "#FBEEE9"
-        ]
-      },
-      "paper": {
-        "role": "neutral",
-        "displayName": "Paper Ground",
-        "canonical": "#E6E1D4",
-        "tonalRamp": [
-          "#302B1C",
-          "#554B32",
-          "#7A6C47",
-          "#9F8C5C",
-          "#B5A780",
-          "#CBC0A5",
-          "#E0DACA",
-          "#F6F4EF"
-        ]
-      },
-      "paper-raise": {
-        "role": "neutral",
-        "displayName": "Paper Raise",
-        "canonical": "#FFFFFF",
-        "tonalRamp": [
-          "#262626",
-          "#434343",
-          "#616161",
-          "#7E7E7E",
-          "#9B9B9B",
-          "#B8B8B8",
-          "#D5D5D5",
-          "#F2F2F2"
-        ]
-      },
-      "paper-sink": {
-        "role": "neutral",
-        "displayName": "Paper Sink",
-        "canonical": "#DAD4C4",
-        "tonalRamp": [
-          "#2F2A1D",
-          "#534A34",
-          "#776B4A",
-          "#9A8B61",
-          "#B2A584",
-          "#C8BFA8",
-          "#DFD9CC",
-          "#F5F4EF"
-        ]
-      },
-      "paper-hover": {
-        "role": "neutral",
-        "displayName": "Paper Hover",
-        "canonical": "#F3F0E7",
-        "tonalRamp": [
-          "#332D1A",
-          "#5A4F2D",
-          "#817140",
-          "#A89354",
-          "#BCAC79",
-          "#D0C4A0",
-          "#E3DCC7",
-          "#F6F4EE"
-        ]
-      },
-      "paper-veil": {
-        "role": "neutral",
-        "displayName": "Paper Veil",
-        "canonical": "#FFFFFFCC",
-        "tonalRamp": [
-          "#262626",
-          "#434343",
-          "#616161",
-          "#7E7E7E",
-          "#9B9B9B",
-          "#B8B8B8",
-          "#D5D5D5",
-          "#F2F2F2"
-        ]
-      },
-      "rule": {
-        "role": "neutral",
-        "displayName": "Rule",
-        "canonical": "#C9C2AF",
-        "tonalRamp": [
-          "#2E2A1F",
-          "#504936",
-          "#73694E",
-          "#968965",
-          "#AEA487",
-          "#C6BEAA",
-          "#DDD9CD",
-          "#F5F3F0"
-        ]
-      },
-      "rule-soft": {
-        "role": "neutral",
-        "displayName": "Rule Soft",
-        "canonical": "#C9C2AF66",
-        "tonalRamp": [
-          "#2E2A1F",
-          "#504936",
-          "#73694E",
-          "#968965",
-          "#AEA487",
-          "#C6BEAA",
-          "#DDD9CD",
-          "#F5F3F0"
-        ]
-      },
-      "ink-strong": {
-        "role": "neutral",
-        "displayName": "Ink Strong — Fixed Ink",
-        "canonical": "#141814",
-        "tonalRamp": [
-          "#232A23",
-          "#3D4A3D",
-          "#586958",
-          "#728972",
-          "#92A492",
-          "#B2BEB2",
-          "#D1D9D1",
-          "#F1F3F1"
-        ]
-      },
-      "ink": {
-        "role": "neutral",
-        "displayName": "Ink",
-        "canonical": "#2A302C",
-        "tonalRamp": [
-          "#242925",
-          "#3F4842",
-          "#5A675E",
-          "#75867B",
-          "#94A299",
-          "#B3BDB6",
-          "#D2D8D4",
-          "#F1F3F2"
-        ]
-      },
-      "ink-mid": {
-        "role": "neutral",
-        "displayName": "Ink Mid",
-        "canonical": "#454E49",
-        "tonalRamp": [
-          "#242926",
-          "#3F4843",
-          "#5B6660",
-          "#76857D",
-          "#95A19A",
-          "#B4BCB7",
-          "#D3D8D5",
-          "#F1F3F2"
-        ]
-      },
-      "ink-dim": {
-        "role": "neutral",
-        "displayName": "Ink Dim",
-        "canonical": "#5E6661",
-        "tonalRamp": [
-          "#252826",
-          "#414643",
-          "#5D6460",
-          "#79837C",
-          "#979F9A",
-          "#B5BBB7",
-          "#D3D7D5",
-          "#F2F3F2"
-        ]
-      },
-      "scrim": {
-        "role": "neutral",
-        "displayName": "Scrim",
-        "canonical": "#141814B8",
-        "tonalRamp": [
-          "#232A23",
-          "#3D4A3D",
-          "#586958",
-          "#728972",
-          "#92A492",
-          "#B2BEB2",
-          "#D1D9D1",
-          "#F1F3F1"
-        ]
-      }
+  "name": "Native",
+  "updated": "2026-09-05",
+  "summary": "Native application chrome: system typeface, neutral near-white ground with true-white surfaces, hairline separators, one green accent, sentence case throughout, one radius ramp, depth by shadow. Replaces the retired 'Paper Line' world (warm oat ground, terracotta complement, Archivo webfont, letterspaced caps, radius 0, hatch texture).",
+  "colors": {
+    "bg": "#F5F5F7",
+    "surface": "#FFFFFF",
+    "surface-2": "#FAFAFA",
+    "hover": "#F0F0F3",
+    "pressed": "#E8E8EC",
+    "sep": "rgba(0, 0, 0, .10)",
+    "sep-soft": "rgba(0, 0, 0, .06)",
+    "sep-strong": "rgba(0, 0, 0, .16)",
+    "text": "#1D1D1F",
+    "text-2": "#4A4A4F",
+    "text-3": "#6E6E73",
+    "accent": "#0B7A4B",
+    "accent-hover": "#096540",
+    "accent-wash": "rgba(11, 122, 75, .09)",
+    "accent-tint": "rgba(11, 122, 75, .16)",
+    "accent-edge": "rgba(11, 122, 75, .32)",
+    "danger": "#D93025",
+    "danger-wash": "rgba(217, 48, 37, .08)",
+    "danger-edge": "rgba(217, 48, 37, .30)"
+  },
+  "colorMeta": {
+    "bg": {
+      "role": "app ground"
     },
-    "typographyMeta": {
-      "micro": {
-        "displayName": "Micro",
-        "purpose": "11px, the system's floor. Badges, meta/address lines, footnotes — both the uppercase signage caps and a set of plain reading-adjacent lines, told apart by weight and line-height, not size."
-      },
-      "ui-text": {
-        "displayName": "UI Text",
-        "purpose": "13px, the most-shared step. Buttons, inputs, names, sequence numbers — both interactive/identifying UI text and reading text (sheet help, form values, the paste textarea, toasts)."
-      },
-      "sub-head": {
-        "displayName": "Sub-head",
-        "purpose": "16px. Declared for dialog titles and tight-context brand, but its one real consumer is the tray's delete glyph (×) — sheet-title and pane-title are actually set one step down, at ui-text/13px."
-      },
-      "compact-stat": {
-        "displayName": "Compact Stat",
-        "purpose": "19px. The optimisation delta figure and the day-nav prev/next chevrons — a figure and a nav glyph sharing a size coincidentally."
-      },
-      "wordmark": {
-        "displayName": "Wordmark",
-        "purpose": "23px. The brand name; the mobile-breakpoint secondary total figure shares this size coincidentally."
-      },
-      "secondary-lead": {
-        "displayName": "Secondary Lead",
-        "purpose": "27px. The desktop miles/stop-count totals beside the lead figure."
-      },
-      "mobile-lead": {
-        "displayName": "Mobile Lead",
-        "purpose": "33px. The driving-total lead figure at ≤900px."
-      },
-      "primary-lead": {
-        "displayName": "Primary Lead",
-        "purpose": "39px. The driving-total lead figure on desktop — the single largest number in the system."
-      },
-      "mono": {
-        "displayName": "Mono",
-        "purpose": "The paste-a-list textarea (13px, on-scale, line-height 1.7 — a bare literal, not one of the three --lh- roles) and inline code (a relative 0.92em, the system's one type value outside the fixed scale)."
-      }
+    "surface": {
+      "role": "all content surfaces",
+      "note": "1.09:1 vs ground \u2014 separated by shadow, not tone"
     },
-    "shadows": [
-      {
-        "name": "pin-tick-shadow",
-        "value": "0 2px 6px rgba(20, 24, 20, .28)",
-        "purpose": "Separates a map pin's badge from unpredictable tile colour underneath it — ink-strong at 28% alpha, hand-written since a marker has no paper ground to tonal-step against."
-      },
-      {
-        "name": "pin-stem-shadow",
-        "value": "0 1px 3px rgba(20, 24, 20, .3)",
-        "purpose": "The same marker-separation exception applied to the pin's stem."
-      },
-      {
-        "name": "pin-label-shadow",
-        "value": "0 2px 6px rgba(20, 24, 20, .22)",
-        "purpose": "The same exception applied to the pin's hover-revealed name label."
-      }
+    "text": {
+      "role": "primary ink",
+      "contrastOnSurface": 16.83,
+      "contrastOnBg": 15.46
+    },
+    "text-2": {
+      "role": "secondary ink",
+      "contrastOnSurface": 8.81,
+      "contrastOnBg": 8.09
+    },
+    "text-3": {
+      "role": "meta ink; the floor",
+      "contrastOnSurface": 5.07,
+      "contrastOnBg": 4.66
+    },
+    "accent": {
+      "role": "route, primary action, flexible stop",
+      "contrastOnSurface": 5.39,
+      "contrastOnBg": 4.95,
+      "whiteOnIt": 5.39,
+      "note": "legal in BOTH directions; this is why there is no deepened text sibling"
+    },
+    "accent-hover": {
+      "role": "pressed/hover accent fill",
+      "whiteOnIt": 7.13
+    },
+    "danger": {
+      "role": "faults only: won't-fit, collision, failed lookup, delete",
+      "contrastOnSurface": 4.77,
+      "whiteOnIt": 4.77
+    },
+    "sep": {
+      "role": "hairline separator",
+      "note": "ink at alpha, never a grey paint"
+    }
+  },
+  "typography": {
+    "fontStack": "-apple-system, BlinkMacSystemFont, \"SF Pro Text\", \"Segoe UI Variable Text\",\n          \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+    "monoStack": "ui-monospace, SFMono-Regular, \"SF Mono\", Menlo, Consolas, monospace",
+    "webfonts": [],
+    "scale": {
+      "fs-1": "11px",
+      "fs-2": "12px",
+      "fs-3": "13px",
+      "fs-4": "15px",
+      "fs-5": "17px",
+      "fs-6": "20px",
+      "fs-7": "26px",
+      "fs-8": "32px"
+    },
+    "weights": [
+      400,
+      500,
+      590,
+      600
     ],
-    "motion": [
-      {
-        "name": "t-fast",
-        "value": "120ms",
-        "purpose": "Default duration for ordinary state change: button/input/station hover and focus, background and colour transitions."
-      },
-      {
-        "name": "t-base",
-        "value": "220ms",
-        "purpose": "Toast enter animation; the arrow-travel and pin-hover transform durations."
-      },
-      {
-        "name": "t-move",
-        "value": "440ms",
-        "purpose": "Named duration for spatial motion; the reorder FLIP's actual hardcoded duration (460ms) sits close to but not exactly on this token, since the Web Animations API call can't read the CSS custom property."
-      },
-      {
-        "name": "ease",
-        "value": "cubic-bezier(.2, .7, .3, 1)",
-        "purpose": "The default easing curve — every ordinary state transition and the Optimise arrow's working-state loop."
-      },
-      {
-        "name": "ease-out",
-        "value": "cubic-bezier(.16, 1, .3, 1)",
-        "purpose": "The travel curve, reserved for things that move through space: the reorder FLIP, the arrow hover-slide, the pin/station hover-lift. Reused as an equivalent literal inside the JS-driven count-up and route draw-on, which can't reference the CSS custom property directly."
-      }
-    ],
-    "breakpoints": [
-      {
-        "name": "compact",
-        "value": "1180px"
-      },
-      {
-        "name": "stacked",
-        "value": "900px"
-      }
+    "lineHeights": {
+      "tight": 1.1,
+      "label": 1.25,
+      "read": 1.45
+    },
+    "case": "sentence",
+    "uppercaseRules": 0,
+    "letterSpacing": "negative only, -.005em to -.028em; nothing positively tracked",
+    "numerals": "tabular-nums globally"
+  },
+  "radius": {
+    "r-sm": "6px",
+    "r-md": "9px",
+    "r-lg": "12px",
+    "r-xl": "16px",
+    "r-pill": "980px",
+    "note": "one ramp, applied everywhere including the schedule"
+  },
+  "elevation": {
+    "shadow-1": "0 1px 2px rgba(0, 0, 0, .05), 0 1px 3px rgba(0, 0, 0, .05)",
+    "shadow-2": "0 2px 6px rgba(0, 0, 0, .07), 0 6px 20px rgba(0, 0, 0, .09)",
+    "shadow-3": "0 8px 28px rgba(0, 0, 0, .14), 0 2px 8px rgba(0, 0, 0, .08)",
+    "rule": "depth is shadow, never a border"
+  },
+  "spacing": {
+    "grid": "4px",
+    "steps": [
+      "4px",
+      "8px",
+      "12px",
+      "16px",
+      "20px",
+      "24px",
+      "32px"
     ]
   },
-  "components": [
-    {
-      "name": "Primary Button",
-      "kind": "button",
-      "refersTo": "button-primary",
-      "description": "The one filled, green action in the system — Optimise. Its arrow travels on hover and loops a departing keyframe while the optimiser is genuinely working.",
-      "html": "<button class=\"ds-btn ds-btn-primary\"><span>Optimise</span><svg viewBox=\"0 0 16 16\" aria-hidden=\"true\" class=\"ds-btn-ico\"><path d=\"M2 8h9M8 4l4 4-4 4\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"/></svg></button>",
-      "css": "@keyframes ds-depart { 0% { transform: translateX(-3px); opacity: 0; } 35% { opacity: 1; } 100% { transform: translateX(9px); opacity: 0; } } .ds-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 16px; font-family: Archivo, sans-serif; font-weight: 600; font-size: 13px; letter-spacing: .12em; text-transform: uppercase; border: 1px solid transparent; border-radius: 5px; cursor: pointer; transition: background 120ms cubic-bezier(.2,.7,.3,1), border-color 120ms cubic-bezier(.2,.7,.3,1), color 120ms cubic-bezier(.2,.7,.3,1), transform 120ms cubic-bezier(.2,.7,.3,1); } .ds-btn:active { transform: translateY(1px) scale(.99); } .ds-btn-ico { width: 15px; height: 15px; flex: none; transition: transform 220ms cubic-bezier(.16,1,.3,1); } .ds-btn-primary { background: var(--green); color: var(--paper-raise); } .ds-btn-primary:hover { background: var(--green-deep); } .ds-btn-primary:hover .ds-btn-ico { transform: translateX(3px); } .ds-btn-primary:active { background: var(--paper); border-color: var(--green); color: var(--green-ink); } .ds-btn-primary.is-working { pointer-events: none; } .ds-btn-primary.is-working .ds-btn-ico { animation: ds-depart 900ms cubic-bezier(.2,.7,.3,1) infinite; } .ds-btn-primary:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }"
-    },
-    {
-      "name": "Ghost Button",
-      "kind": "button",
-      "refersTo": "button-ghost",
-      "description": "The system's secondary action — hairline border, ink-mid label, e.g. Undo.",
-      "html": "<button class=\"ds-btn ds-btn-ghost\">Undo</button>",
-      "css": ".ds-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 16px; font-family: Archivo, sans-serif; font-weight: 600; font-size: 13px; letter-spacing: .12em; text-transform: uppercase; border-radius: 5px; cursor: pointer; background: transparent; transition: border-color 120ms cubic-bezier(.2,.7,.3,1), color 120ms cubic-bezier(.2,.7,.3,1), transform 120ms cubic-bezier(.2,.7,.3,1); } .ds-btn:active { transform: translateY(1px) scale(.99); } .ds-btn-ghost { border: 1px solid var(--rule); color: var(--ink-mid); } .ds-btn-ghost:hover { border-color: var(--ink-mid); color: var(--ink-strong); } .ds-btn-ghost:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; } .ds-btn-ghost:disabled { opacity: .32; cursor: not-allowed; }"
-    },
-    {
-      "name": "Line Button",
-      "kind": "button",
-      "refersTo": "button-line",
-      "description": "The only button that borrows the route ink (green). Its state-machine use is the maps-handoff toggle — see the Maps Handoff component for the is-ready state. Note: its hover/is-ready fill pairs ink-strong text on green at a measured 3.32:1, under the system's own 4.5:1 floor — recorded as a gap, not a model to copy.",
-      "html": "<button class=\"ds-btn ds-btn-line\">Copy Maps link</button>",
-      "css": ".ds-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 16px; font-family: Archivo, sans-serif; font-weight: 600; font-size: 13px; letter-spacing: .12em; text-transform: uppercase; border-radius: 5px; cursor: pointer; background: transparent; transition: background 120ms cubic-bezier(.2,.7,.3,1), color 120ms cubic-bezier(.2,.7,.3,1), transform 120ms cubic-bezier(.2,.7,.3,1); } .ds-btn:active { transform: translateY(1px) scale(.99); } .ds-btn-line { border: 1px solid var(--green); color: var(--green-ink); } .ds-btn-line:hover { background: var(--green); color: var(--ink-strong); } .ds-btn-line:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }"
-    },
-    {
-      "name": "Station Badges",
-      "kind": "chip",
-      "refersTo": "station-fixed",
-      "description": "The Line's two exception chips. There is no badge for the flexible/green state — flexible is the diagram's unmarked default.",
-      "html": "<div class=\"ds-badge-row\"><span class=\"ds-badge ds-badge-pin\">Fixed</span><span class=\"ds-badge ds-badge-unfit\">Won't fit</span></div>",
-      "css": ".ds-badge-row { display: flex; gap: 8px; font-family: Archivo, sans-serif; } .ds-badge { font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; padding: 0 4px; border: 1px solid currentColor; } .ds-badge-pin { color: var(--ink-strong); } .ds-badge-unfit { color: var(--clay); }"
-    },
-    {
-      "name": "Station Card",
-      "kind": "card",
-      "refersTo": "station-fixed",
-      "description": "Reversed from the prior world: a station now carries a real paper-raise/rule card surface AT REST, not just on hover — the code comment beside the rule states why: an event with no background was indistinguishable from an empty grid row. The hover/selection wash (paper-hover, reaching back to the tick) still layers on top of this, at .85 opacity on hover and 1 on selection.",
-      "html": "<div class=\"ds-station is-pinned\"><div class=\"ds-station-top\"><span class=\"ds-station-seq\">2</span><span class=\"ds-station-name\">Dentist — Dr. Nguyen</span><span class=\"ds-badge ds-badge-pin\">Fixed</span></div><div class=\"ds-station-meta\">1500 Wilson Blvd, Arlington VA</div></div>",
-      "css": ".ds-station { position: relative; background: var(--paper-raise); border: 1px solid var(--rule); border-radius: 0; box-shadow: none; padding: 4px 8px 4px 4px; margin-left: 34px; font-family: Archivo, sans-serif; transition: background 120ms cubic-bezier(.2,.7,.3,1), border-color 120ms cubic-bezier(.2,.7,.3,1); } .ds-station:hover { border-color: var(--ink-mid); } .ds-station::before { content: ''; position: absolute; inset: 0 0 0 -34px; background: var(--paper-hover); opacity: 0; transition: opacity 120ms cubic-bezier(.2,.7,.3,1); pointer-events: none; } .ds-station:hover::before { opacity: .85; } .ds-station.is-selected::before { opacity: 1; } .ds-station.is-unfit .ds-station-name { color: var(--clay); } .ds-station.is-nogeo .ds-station-name { color: var(--ink-mid); } .ds-station-top { position: relative; display: flex; align-items: baseline; gap: 6px; } .ds-station-seq { font-family: 'Archivo Narrow', Archivo, sans-serif; font-weight: 700; font-variant-numeric: tabular-nums; font-size: 13px; color: var(--ink-strong); min-width: 13px; } .ds-station-name { font-weight: 700; font-size: 16px; color: var(--ink-strong); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .ds-station-meta { position: relative; font-size: 11px; line-height: 1.5; color: var(--ink-dim); font-variant-numeric: tabular-nums; margin-top: 1px; } .ds-badge { font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; padding: 0 4px; border: 1px solid currentColor; } .ds-badge-pin { color: var(--ink-strong); }"
-    },
-    {
-      "name": "Siding Card",
-      "kind": "card",
-      "refersTo": "station-flexible",
-      "description": "The tray's unscheduled-stop card. Sits at ground level (paper) at rest, not the raised step a scheduled station now permanently occupies — a siding isn't on the day yet, so it only lifts to paper-raise on hover.",
-      "html": "<div class=\"ds-siding\"><span class=\"ds-siding-tick is-geo\"></span><div><div class=\"ds-siding-name\">Great Falls Park</div><div class=\"ds-siding-addr\">9200 Old Dominion Dr, McLean VA</div></div><span class=\"ds-siding-x\">&times;</span></div>",
-      "css": ".ds-siding { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px; padding: 8px 12px; background: var(--paper); border: 1px solid var(--rule); border-radius: 5px; cursor: grab; font-family: Archivo, sans-serif; transition: border-color 120ms cubic-bezier(.2,.7,.3,1), background 120ms cubic-bezier(.2,.7,.3,1), transform 120ms cubic-bezier(.16,1,.3,1); } .ds-siding:hover { border-color: var(--ink-mid); background: var(--paper-raise); transform: translateX(3px); } .ds-siding:active { cursor: grabbing; transform: translateX(1px) scale(.995); } .ds-siding.is-dragging { opacity: .4; cursor: grabbing; } .ds-siding-tick { width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--ink-dim); transition: background 120ms cubic-bezier(.2,.7,.3,1), transform 220ms cubic-bezier(.16,1,.3,1); } .ds-siding:hover .ds-siding-tick { transform: scale(1.35); } .ds-siding-tick.is-geo { border-color: var(--ink-strong); background: var(--ink-strong); } .ds-siding-name { font-size: 13px; font-weight: 600; color: var(--ink-strong); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .ds-siding-addr { font-size: 11px; color: var(--ink-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .ds-siding-x { color: var(--ink-dim); font-size: 16px; line-height: 1; padding: 4px; } .ds-siding-x:hover { color: var(--clay-ink); }"
-    },
-    {
-      "name": "Day Nav",
-      "kind": "nav",
-      "refersTo": "station-fixed",
-      "description": "The rail's day navigation — a three-cell hairline grid with a centred date, rounded and clipped at --radius-chrome as one pill.",
-      "html": "<nav class=\"ds-daynav\"><button class=\"ds-daynav-btn\">&#8249;</button><button class=\"ds-daynav-date\">FRI, SEP 4</button><button class=\"ds-daynav-btn\">&#8250;</button></nav>",
-      "css": ".ds-daynav { display: grid; grid-template-columns: 34px 1fr 34px; align-items: stretch; border: 1px solid var(--rule); border-radius: 5px; overflow: hidden; font-family: Archivo, sans-serif; } .ds-daynav-btn { background: none; border: 0; color: var(--ink-mid); font-size: 19px; font-weight: 400; line-height: 1; cursor: pointer; transition: background 120ms cubic-bezier(.2,.7,.3,1), color 120ms cubic-bezier(.2,.7,.3,1); } .ds-daynav-btn:hover { background: var(--rule); color: var(--ink-strong); } .ds-daynav-date { font-family: 'Archivo Narrow', Archivo, sans-serif; font-weight: 700; font-size: 13px; letter-spacing: .1em; text-transform: uppercase; padding: 8px 4px; border-left: 1px solid var(--rule); border-right: 1px solid var(--rule); color: var(--ink-strong); background: none; cursor: default; }"
-    },
-    {
-      "name": "The Line — Track Segment",
-      "kind": "custom",
-      "refersTo": "station-fixed",
-      "description": "The system's signature component: a fixed station (hollow ink-strong ring) and a flexible station (green ring + filled core) joined by a green track, split into a heavy stopped segment, a solid driven segment, and a dashed slack segment — thickness itself carries meaning, proportional to real minutes. Drive-leg duration rides a chip on the driven stretch. Read straight out of schedule.js's _draw() geometry; colours here are read live via getComputedStyle in the real app, not hardcoded the way this static snippet has to be.",
-      "html": "<svg class=\"ds-line-demo\" viewBox=\"0 0 220 170\" xmlns=\"http://www.w3.org/2000/svg\"><line x1=\"30\" y1=\"14\" x2=\"30\" y2=\"34\" stroke=\"var(--green)\" stroke-width=\"7\" stroke-linecap=\"round\"/><line x1=\"30\" y1=\"34\" x2=\"30\" y2=\"70\" stroke=\"var(--green)\" stroke-width=\"3\"/><line x1=\"30\" y1=\"70\" x2=\"30\" y2=\"126\" stroke=\"var(--rule)\" stroke-width=\"3\" stroke-dasharray=\"2 4\" stroke-linecap=\"round\"/><line x1=\"30\" y1=\"136\" x2=\"30\" y2=\"156\" stroke=\"var(--green)\" stroke-width=\"7\" stroke-linecap=\"round\"/><rect x=\"25\" y=\"44\" width=\"46\" height=\"16\" rx=\"3\" fill=\"var(--paper-raise)\" stroke=\"var(--rule)\"/><text x=\"31\" y=\"55.5\" fill=\"var(--green-ink)\" font-size=\"11\" font-family=\"Archivo, sans-serif\" letter-spacing=\".04em\" font-weight=\"700\">7 min</text><text x=\"38\" y=\"101\" fill=\"var(--ink-dim)\" font-size=\"11\" font-family=\"Archivo, sans-serif\" letter-spacing=\".04em\">18 min free</text><line x1=\"37.5\" y1=\"14\" x2=\"46\" y2=\"14\" stroke=\"var(--rule)\" stroke-width=\"1\"/><line x1=\"35\" y1=\"146\" x2=\"46\" y2=\"146\" stroke=\"var(--green)\" stroke-width=\"1.6\"/><circle cx=\"30\" cy=\"14\" r=\"7.5\" fill=\"var(--paper-raise)\" stroke=\"var(--ink-strong)\" stroke-width=\"3\"/><circle cx=\"30\" cy=\"146\" r=\"5\" fill=\"var(--paper-raise)\" stroke=\"var(--green)\" stroke-width=\"3\"/><circle cx=\"30\" cy=\"146\" r=\"2.8\" fill=\"var(--green)\"/><text x=\"46\" y=\"18\" fill=\"var(--ink-strong)\" font-size=\"13\" font-weight=\"700\" font-family=\"Archivo, sans-serif\">Dentist — Dr. Nguyen</text><text x=\"46\" y=\"150\" fill=\"var(--ink-strong)\" font-size=\"13\" font-weight=\"700\" font-family=\"Archivo, sans-serif\">Costco Pentagon City</text></svg>",
-      "css": ".ds-line-demo { background: var(--paper); display: block; width: 220px; height: 170px; }"
-    },
-    {
-      "name": "Map Pin",
-      "kind": "custom",
-      "refersTo": "station-flexible",
-      "description": "Rebuilt as a real pin: a 26px badge on a 9px stem, anchored bottom so the stem's tip sits on the real coordinate, with a hover-revealed label replacing the browser's native tooltip. box-shadow (ink-strong at low alpha) is used here and only here in the whole system, since a marker floats over unpredictable tile colour with no paper ground to tonal-step against.",
-      "html": "<div class=\"ds-pin\"><div class=\"ds-pin-label\">Great Falls Park</div><div class=\"ds-pin-tick\">3</div><div class=\"ds-pin-stem\"></div></div>",
-      "css": ".ds-pin { display: flex; flex-direction: column; align-items: center; position: relative; font-family: 'Archivo Narrow', Archivo, sans-serif; } .ds-pin-tick { width: 26px; height: 26px; border-radius: 50%; background: var(--paper-raise); border: 2.5px solid var(--green); display: grid; place-items: center; font-weight: 700; font-size: 13px; color: var(--ink-strong); font-variant-numeric: tabular-nums; box-shadow: 0 2px 6px rgba(20,24,20,.28); } .ds-pin-stem { width: 2.5px; height: 9px; margin-top: -1px; background: var(--green); box-shadow: 0 1px 3px rgba(20,24,20,.3); } .ds-pin-label { position: absolute; bottom: 100%; margin-bottom: 4px; padding: 2px 8px; background: var(--paper-raise); border: 1px solid var(--rule); border-radius: 5px; font-size: 11px; font-weight: 600; color: var(--ink); white-space: nowrap; box-shadow: 0 2px 6px rgba(20,24,20,.22); }"
-    },
-    {
-      "name": "Maps Handoff",
-      "kind": "custom",
-      "refersTo": "button-line",
-      "description": "One button toggling between two jobs rather than offering two separate actions: default state copies the link; after a successful copy it relabels to 'Open' and fills solid green with ink-strong text (.is-ready — see Line Button's recorded 3.32:1 gap); a sequence change (not a same-order time-only drag) reverts it automatically.",
-      "html": "<div style=\"display:flex; gap:12px;\"><button class=\"ds-btn ds-btn-line ds-btn-wide\">Copy Maps link</button><button class=\"ds-btn ds-btn-line ds-btn-wide is-ready\">Open</button></div>",
-      "css": ".ds-btn-wide { width: 100%; } .ds-btn-line.is-ready { background: var(--green); color: var(--ink-strong); } .ds-btn-line.is-ready:hover { background: var(--green-deep); }"
-    }
+  "motion": {
+    "t-fast": "120ms",
+    "t-base": "220ms",
+    "t-move": "420ms",
+    "ease": "cubic-bezier(.32, .72, 0, 1)",
+    "ease-out": "cubic-bezier(.16, 1, .3, 1)",
+    "reducedMotion": "spatial travel and looping animation stop; opacity/colour state remains"
+  },
+  "layout": {
+    "columns": "rail line map",
+    "rail": "clamp(248px, 20vw, 292px)",
+    "schedule": "clamp(340px, 30vw, 452px)",
+    "note": "Unscheduled lives in the rail, not under the schedule. Sharing the column halved the schedule (425px -> 756px after the move) and created two nested scroll regions."
+  },
+  "rules": [
+    "One Accent Rule \u2014 a single green legal as fill-behind-white and as text-on-white; never add a second.",
+    "Elevation-Not-Tone Rule \u2014 white cards are 1.09:1 on the ground; removing a shadow makes them vanish.",
+    "Sentence Case Rule \u2014 zero text-transform:uppercase; no positive letterspacing.",
+    "System Face Rule \u2014 no webfont is loaded.",
+    "One Radius Ramp Rule \u2014 no raw pixel radii, schedule included.",
+    "Danger Reserve \u2014 --danger only for real faults.",
+    "No Texture \u2014 zero background image fills.",
+    "Card Stripe Ban \u2014 event cards carry no coloured left edge; the track and badge already say it.",
+    "Never set position on .fc-v-event / info.el.",
+    "LABEL_INSET must equal .fc-v-event margin-left (30px).",
+    "Pixel-based drag tests must measure px-per-minute off the live grid; expandRows changes slot height."
   ],
-  "narrative": {
-    "northStar": "The Paper Line",
-    "overview": "dayroute's thesis is unchanged by this pass: the schedule *is* the diagram, not a list beside a map. A vertical time axis (The Line) places every stop at its real clock position, so the empty space between two stations is drawn to scale and IS the drive leg. What changed is the material the diagram is printed on. The system's original world — fired enamel, midnight blue, lit by scarlet/cobalt/amber — is entirely gone, replaced at the user's explicit, direct instruction after it failed in the product's own stated use scene: read on a phone, in a car, in the sun. The direction contract embedded in index.html's <body> comment records the change plainly: \"Palette replaced at the user's direction; the dark original lost to a daylight use scene.\" There was no fresh Impeccable direction round behind this world the way there was for the enamel one (seed 3faa1e80); the code — style.css, schedule.js, map.js — is the only design record, exactly as it was before.\n\nThe new world reads as a rail diagram printed on warm oat stock: one paper ground, cards raised to true white, one green line ink for the route and everything routine, and clay — green's complement — held to exactly one job: won't-fit and collision, never anything ordinary. The card/ground separation is not a stylistic pick; it is a measured floor. Paper Raise on Paper is 1.31:1, and that number exists in this document because the previous theme's identical step measured 1.12:1 and was reported twice, independently, as \"events are the same colour as the calendar, hard to visually see.\" --ink-dim holds its own measured floor: 4.53:1 on paper, \"the floor, not a soft grey.\"\n\nConfirmed rejections, all visible in the shipped code: no shadow anywhere except the map's own markers (all three parts now, not one hack for one state), no gradient, and no stock basemap tile set (OpenFreeMap's positron style is recoloured at load by map.js's enamelise() — a function name that is now a misnomer left over from the enamel world). The chrome/diagram radius split survives untouched: tool chrome rounds at --radius-chrome (5px), the diagram and the map's own route/track stay exactly 0.",
-    "keyCharacteristics": [
-      "Ground is a material, not a backdrop: warm paper throughout, cards raised to pure white at a measured, load-bearing 1.31:1 step — a floor, recorded because dropping toward the old theme's 1.12:1 is the exact failure this palette exists to fix.",
-      "Two line inks, not four: green is the route, the primary action, and a flexible station; clay is its sole complement — attention, won't-fit, and collision, never anything routine.",
-      "Both line inks carry a deepened text-only variant, because each raw value fails the 4.5:1 small-text floor on paper (green 4.13:1, clay 4.38:1): green-ink reaches 6.93:1, clay-ink reaches 5.98:1.",
-      "The Line is drawn in weighted, proportional segments, not a dot in a gap: heavy (7px) while stopped, solid (3px) while driving, dashed (3px, 2 4) across slack, proportional to real minutes.",
-      "schedule.js reads every Line colour from CSS custom properties via getComputedStyle at draw time, and app.js's legend does the same — neither hardcodes a hex, a rule earned after a prior palette swap left literals pointing at a dead theme.",
-      "Map markers are real pins — a 26px badge on a 9px stem — with a styled hover label replacing the native tooltip. box-shadow is permitted on the pin alone, because a marker floats over unpredictable tile colour and cannot separate from it by tonal step.",
-      "The basemap is Positron (light), recoloured by source luminance onto the same paper the interface is printed on.",
-      "The type scale, the 4px spacing grid, the hair/hair-wall border-weight hierarchy, the chrome/diagram radius split, and the five-value motion system all carry over from the prior build unchanged — reverified against the current code."
-    ],
-    "rules": [
-      {
-        "name": "The Card Floor Rule",
-        "body": "Paper Raise on Paper measures 1.31:1 — the separation that makes a scheduled event legibly distinct from an empty grid row. This is a floor, not a target to erode: the previous world's identical step measured 1.12:1 and was reported twice, independently, as illegible.",
-        "section": "colors"
-      },
-      {
-        "name": "The Deepened-Ink Rule",
-        "body": "Both line inks fail the 4.5:1 small-text floor at their raw value — green at 4.13:1, clay at 4.38:1 — so each carries a deepened, text-only sibling (green-ink 6.93:1, clay-ink 5.98:1) for every place the colour sits as text rather than a fill or a ring.",
-        "section": "colors"
-      },
-      {
-        "name": "The Two Inks Rule",
-        "body": "Exactly two hues carry state on the diagram and the map — green (route, flexible) and clay (won't-fit, collision) — plus ink-strong, a neutral extreme that marks a fixed appointment without being a third hue.",
-        "section": "colors"
-      },
-      {
-        "name": "The Tokenised Derivative Rule",
-        "body": "Every alpha wash, hover-deepened fill, or backdrop tint is a named custom property, never an inline hex or rgba() outside :root. A palette replacement leaves bare literals silently pointing at the dead theme unless every derived value is tokenised in the same pass as the primaries — this has now failed twice in this project's history.",
-        "section": "colors"
-      },
-      {
-        "name": "The Named-Role Scale Rule",
-        "body": "Every font size is one of the eight --fs- tokens, documented by role. A new component reaches for a role, never a bare pixel value or a ninth size.",
-        "section": "typography"
-      },
-      {
-        "name": "The Weight Carries Hierarchy Rule",
-        "body": "400/600/700 mean reading text / interactive text / a leading figure-or-brand-or-badge everywhere except three named exceptions (.daynav-btn stays 400, .daynav-date stays 700, .pane-title/.sheet-title are headings deliberately downgraded to 600).",
-        "section": "typography"
-      },
-      {
-        "name": "The Three Line-Heights Rule",
-        "body": "--lh-tight/--lh-label/--lh-read are the complete set; the two bare-literal exceptions (the paste textarea's 1.7, the delete glyph's 1) are single-purpose optical fixes, not a fourth role.",
-        "section": "typography"
-      },
-      {
-        "name": "The 4px-Grid Rule",
-        "body": "Every meaningful gap, padding, and margin is one of the seven --space- steps or the --pad/--gap aliases.",
-        "section": "layout"
-      },
-      {
-        "name": "The One-Screen Rule",
-        "body": "Desktop never scrolls the page; only the panes scroll internally.",
-        "section": "layout"
-      },
-      {
-        "name": "The Read-Only Overlay Rule",
-        "body": "The Line's SVG track only ever reads geometry (getBoundingClientRect) off FullCalendar's DOM — it never sets position on .fc-v-event or info.el, because FullCalendar sizes events by absolute top/bottom to keep them proportional to duration.",
-        "section": "layout"
-      },
-      {
-        "name": "The Flat-By-Material Rule",
-        "body": "Depth is tonal, not cast. A surface is \"above\" another by sitting a lighter step of the same paper plus a hairline border — never a shadow, never a blur — everywhere except the marker exception.",
-        "section": "elevation"
-      },
-      {
-        "name": "The Marker Shadow Exception",
-        "body": "box-shadow is permitted on .pin-tick, .pin-stem, and .pin-label alone, because a map marker sits over unpredictable tile colour and has no tonal ground to step against. It is not precedent for a shadow anywhere else.",
-        "section": "elevation"
-      },
-      {
-        "name": "Chrome Radius, Diagram Stays Sharp",
-        "body": "Tool chrome rounds at --radius-chrome (5px); the diagram and the map's own route/track rendering stay exactly 0, with circles as their only curve.",
-        "section": "shapes"
-      },
-      {
-        "name": "The Two Weights Rule",
-        "body": "--hair is the default border weight everywhere; --hair-wall is reserved for major structural panel dividers, and the Line/Map seam additionally overrides its colour to --ink-dim because it is the single most important boundary in the layout.",
-        "section": "shapes"
-      }
-    ],
-    "dos": [
-      "Do treat 1.31:1 (Paper Raise on Paper) as a floor, not a target to erode — a material change that brings a card and its ground closer together than this reopens the exact defect this palette exists to fix.",
-      "Do treat --green-ink (6.93:1) and --clay-ink (5.98:1) as the only legible way to set either line ink as small text; the raw values fail 4.5:1 on paper.",
-      "Do read Line and legend colours from getComputedStyle, never hardcode a hex in schedule.js or app.js's renderLegend().",
-      "Do remember map.js's route colours are literal strings, not CSS variables, and update them by hand alongside style.css on any future palette change — MapLibre's paint properties can't consume var().",
-      "Do round tool chrome at --radius-chrome (5px) and keep the diagram and the map's route/track at exactly 0.",
-      "Do reach for one of the eight named --fs- roles and one of the three --lh- line-heights, never a bare pixel value.",
-      "Do draw every gap, padding, and margin from --space-1 through --space-7 (or the --pad/--gap aliases).",
-      "Do use clay freely in chrome for anything that genuinely needs attention. The moment clay touches a station or a map pin, hold it to exactly one meaning: won't-fit or collision.",
-      "Do keep the tick, connector, and card of a station acting as one coupled object — check LABEL_INSET/margin-left before changing any one of them independently.",
-      "Do tokenise every derived alpha wash or hover fill the moment it's introduced, in the same pass as the primary it derives from."
-    ],
-    "donts": [
-      "Don't add a coloured left-edge accent to a card or container.",
-      "Don't add a shadow or a gradient anywhere except the map marker's three parts (.pin-tick/.pin-stem/.pin-label).",
-      "Don't let clay mark a routine drive leg or a routine (non-unfit) station/pin state.",
-      "Don't invert .maplibregl-ctrl-group button span's filter — that convention only made sense against the enamel world's dark control glyphs; inverting it on paper renders the zoom buttons white-on-white and they disappear.",
-      "Don't invent a third hue for the Line or the map. Green, clay, and ink-strong are the complete set.",
-      "Don't add a decorative, idle-state loop. Looping animation is reserved for feedback tied to a genuinely pending operation; a pulsing now-line dot was tried and rejected for exactly this reason.",
-      "Don't give a station its own left-border or full-recolour treatment for state; state lives on .ev-name's text colour and the badge, never a card-level border swap.",
-      "Don't trust the \"A station, not a card\" comment above .fc-v-event — it describes the previous world's doctrine and was not updated when the rule beneath it started giving every station a real paper-raise/rule surface at rest.",
-      "Don't treat .btn--line's hover/.is-ready state (ink-strong text on green, 3.32:1) as a model to copy elsewhere — it's a recorded gap under this system's own 4.5:1 floor, not a sanctioned pairing."
-    ]
-  }
+  "exceptions": [
+    {
+      "what": "map marker box-shadow",
+      "why": "a marker floats over unknown tile content; no tonal step can separate it"
+    }
+  ]
 }

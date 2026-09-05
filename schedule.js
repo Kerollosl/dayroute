@@ -9,10 +9,11 @@
 // proportional to duration; overriding it makes them grow to fit their text.
 // The overlay only ever READS geometry.
 
+const SYS_FONT = '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif';
 import { toHM, toMin, fmtDur, fmtLeg } from './store.js';
 
 const TRACK_GUTTER = 18;   // distance from the start of the event column
-const LABEL_INSET  = 34;   // where the label begins; matches .fc-v-event margin-left
+const LABEL_INSET  = 30;   // where the label begins; matches .fc-v-event margin-left
 const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)');
 const SVGNS = 'http://www.w3.org/2000/svg';
 
@@ -571,15 +572,15 @@ export class Schedule {
     const cs = getComputedStyle(document.documentElement);
     const C = (name, fallback) => (cs.getPropertyValue(name).trim() || fallback);
     const T = {
-      paper: C('--paper', '#E6E1D4'),
-      raise: C('--paper-raise', '#FFFFFF'),
-      rule: C('--rule', '#C9C2AF'),
-      inkStrong: C('--ink-strong', '#141814'),
-      inkMid: C('--ink-mid', '#454E49'),
-      inkDim: C('--ink-dim', '#5E6661'),
-      green: C('--green', '#0E7A46'),
-      greenInk: C('--green-ink', '#095430'),
-      clay: C('--clay', '#B0431F'),
+      paper: C('--surface', '#FFFFFF'),
+      raise: C('--surface', '#FFFFFF'),
+      rule: C('--sep', 'rgba(0,0,0,.10)'),
+      inkStrong: C('--text', '#1D1D1F'),
+      inkMid: C('--text-2', '#4A4A4F'),
+      inkDim: C('--text-3', '#6E6E73'),
+      green: C('--accent', '#0B7A4B'),
+      greenInk: C('--accent', '#0B7A4B'),
+      clay: C('--danger', '#D93025'),
     };
 
     const stopOf = (st) => (st.id ? this.store.byId(st.id) : null);
@@ -593,7 +594,7 @@ export class Schedule {
       if (st.yEnd - st.y < 2) continue;
       svg.appendChild(el('line', {
         x1: TRACK_X, y1: st.y, x2: TRACK_X, y2: st.yEnd,
-        stroke: T.green, 'stroke-width': 7, 'stroke-linecap': 'round',
+        stroke: T.green, 'stroke-width': 5, 'stroke-linecap': 'round',
       }));
     }
 
@@ -630,7 +631,7 @@ export class Schedule {
       const chipY = prev.yEnd + (driveEndY - prev.yEnd) / 2;
       const label = el('text', {
         x: TRACK_X + 14, y: chipY + 3.5, fill: T.greenInk,
-        'font-size': '11', 'font-family': 'Archivo, sans-serif',
+        'font-size': '11', 'font-family': SYS_FONT,
         'letter-spacing': '.04em', 'font-weight': '700',
       });
       label.textContent = fmtLeg(secs);
@@ -648,7 +649,7 @@ export class Schedule {
       if (slackMin >= 10 && cur.y - driveEndY >= 22) {
         const sl = el('text', {
           x: TRACK_X + 14, y: driveEndY + (cur.y - driveEndY) / 2 + 3.5, fill: T.inkDim,
-          'font-size': '11', 'font-family': 'Archivo, sans-serif',
+          'font-size': '11', 'font-family': SYS_FONT,
           'letter-spacing': '.04em', 'font-weight': '400',
         });
         sl.textContent = `${slackMin} min free`;

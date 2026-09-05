@@ -4,33 +4,28 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>dayroute</title>
-<meta name="description" content="A day of stops read as a rail line, routed for least driving, handed to Google Maps.">
-<meta name="theme-color" content="#E6E1D4">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23E6E1D4'/%3E%3Cpath d='M6 24 L14 8 L18 16 L26 16' fill='none' stroke='%230E7A46' stroke-width='3.5' stroke-linecap='square'/%3E%3Ccircle cx='14' cy='8' r='3' fill='%23141814'/%3E%3Ccircle cx='26' cy='16' r='3' fill='%23141814'/%3E%3C/svg%3E">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Archivo+Narrow:wght@600;700&display=swap" rel="stylesheet">
+<meta name="description" content="Plan a day of stops, route it for the least driving, and open it in Google Maps.">
+<meta name="theme-color" content="#F5F5F7">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230B7A4B'/%3E%3Cpath d='M8 22 Q16 22 16 16 T24 10' fill='none' stroke='%23fff' stroke-width='2.5' stroke-linecap='round'/%3E%3Ccircle cx='8' cy='22' r='2.6' fill='%23fff'/%3E%3Ccircle cx='24' cy='10' r='2.6' fill='%23fff'/%3E%3C/svg%3E">
 <link href="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
 <link href="style.css" rel="stylesheet">
 </head>
 <body>
 <!--
-THESIS: A day of driving read as a rail line, not a list. Refuses the itinerary-cards-beside-a-map-panel
-arrangement every trip planner ships; here the schedule IS the diagram.
-OWN-WORLD: Printed on oat paper #E6E1D4, cards raised to white so an event is legibly distinct from empty
-grid — the previous dark ground put those two within 1.12:1 of each other and they genuinely could not be
-told apart. Green #0E7A46 is the route ink, the primary action, and a flexible station; ink #141814 fills a
-fixed appointment's interchange; clay #B0431F is the complement and the sole attention ink — won't-fit and
-collision, nothing routine. The Line is drawn in weighted segments, heavy at a stop, medium while driving,
-dashed across slack, so its thickness carries meaning instead of a dot in a gap. Archivo, wide-tracked caps
-labels, tabular figures right-aligned. The basemap is recoloured by luminance onto the same paper.
-STORY: The visitor sees the whole day as one line, reads where the driving actually costs, optimises
-around the appointments they cannot move, and leaves with a Maps link already loaded.
-FIRST VIEWPORT: Left rail, brand over day totals as large tabular figures, Optimise beneath. Centre, the
-Line: a vertical time axis where stations sit at their real times so the gap between two stops IS the
-drive leg, split into its driven and slack parts. Right, the map on the same paper, route in green.
-FORM: Transit diagram, light stock. Palette replaced at the user's direction; the dark original lost to a
-daylight use scene — this is read on a phone, in a car, in the sun.
+THESIS: A day of stops planned the way a native scheduling app would do it — the schedule is the
+document, the map is the confirmation, and the least-driving order is one button away.
+OWN-WORLD: System typeface, neutral near-white ground (#F5F5F7) with true-white surfaces, hairline
+separators instead of walls, and a single green (#0B7A4B) that owns the route, the primary action and
+a flexible stop. Nothing is uppercase; nothing is textured. Depth comes from one soft shadow and a
+consistent radius, the way iOS and Material both resolve it. Attention red appears only for a real
+fault. Earlier revisions of this file read as "AI-made" for exactly the reasons now removed: a warm
+cream ground with a terracotta complement, letterspaced caps on every label, decorative hatch fills,
+and railway metaphor naming over plain words.
+STORY: Open the day, see every stop at its real time, optimise around the appointments that cannot
+move, and leave with a Maps link already loaded.
+FIRST VIEWPORT: Left, the day — date, totals, the two actions, and whatever is still unscheduled.
+Centre, the schedule at full column height so a whole day is visible without hunting. Right, the map.
+FORM: Native application chrome. Plain language, sentence case, generous spacing, one accent.
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict,
 DESIGN.md, and every shipping raster carrying its provenance.
 -->
@@ -39,57 +34,72 @@ DESIGN.md, and every shipping raster carrying its provenance.
   <aside class="rail" id="rail">
     <header class="brand">
       <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
-        <circle cx="16" cy="16" r="14" fill="none" stroke="currentColor" stroke-width="2"/>
-        <path d="M9 22 L16 10 L23 22" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="square"/>
+        <rect width="32" height="32" rx="7" fill="currentColor"/>
+        <path d="M8 22 Q16 22 16 16 T24 10" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
+        <circle cx="8" cy="22" r="2.6" fill="#fff"/>
+        <circle cx="24" cy="10" r="2.6" fill="#fff"/>
       </svg>
-      <div class="brand-text">
-        <span class="brand-name">dayroute</span>
-        <span class="brand-sub">one line, least driving</span>
-      </div>
+      <span class="brand-name">dayroute</span>
     </header>
 
     <nav class="daynav" aria-label="Day">
-      <button class="daynav-btn" id="dayPrev" aria-label="Previous day">&#8249;</button>
+      <button class="daynav-btn" id="dayPrev" aria-label="Previous day">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3 L5 8 L10 13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
       <button class="daynav-date" id="dayLabel" aria-live="polite">—</button>
-      <button class="daynav-btn" id="dayNext" aria-label="Next day">&#8250;</button>
+      <button class="daynav-btn" id="dayNext" aria-label="Next day">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3 L11 8 L6 13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <button class="daynav-today" id="dayToday">Today</button>
     </nav>
-    <button class="daynav-today" id="dayToday">Today</button>
 
     <section class="totals" aria-label="Day totals">
-      <div class="total total--lead">
+      <div class="total">
         <span class="total-figure" id="totDrive">0:00</span>
         <span class="total-label">Driving</span>
       </div>
-      <div class="total-row">
-        <div class="total">
-          <span class="total-figure total-figure--sm" id="totDist">0</span>
-          <span class="total-label">Miles</span>
-        </div>
-        <div class="total">
-          <span class="total-figure total-figure--sm" id="totStops">0</span>
-          <span class="total-label">Stops</span>
-        </div>
+      <div class="total">
+        <span class="total-figure" id="totDist">0</span>
+        <span class="total-label">Miles</span>
       </div>
-      <div class="delta" id="delta" hidden>
-        <span class="delta-figure" id="deltaFigure">0:00</span>
-        <span class="delta-label" id="deltaLabel">saved</span>
+      <div class="total">
+        <span class="total-figure" id="totStops">0</span>
+        <span class="total-label">Stops</span>
       </div>
     </section>
 
-    <div class="rail-actions">
-      <button class="btn btn--primary" id="btnOptimize">
-        <span>Optimise</span>
-        <svg viewBox="0 0 16 16" aria-hidden="true" class="btn-ico"><path d="M2 8h9M8 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="2"/></svg>
-      </button>
-      <button class="btn btn--ghost" id="btnUndo" disabled>Undo</button>
+    <div class="delta" id="delta" hidden>
+      <span class="delta-figure" id="deltaFigure">0:00</span>
+      <span class="delta-label" id="deltaLabel">saved</span>
     </div>
 
     <div class="rail-actions">
-      <button class="btn btn--line btn--wide" id="btnMapsAction">
-        <span id="btnMapsActionLabel">Copy Maps link</span>
+      <button class="btn btn--primary btn--wide" id="btnOptimize">
+        <svg viewBox="0 0 16 16" aria-hidden="true" class="btn-ico"><path d="M2 11 Q7 11 8 8 T14 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="2.5" cy="11" r="1.8" fill="currentColor"/><circle cx="13.5" cy="5" r="1.8" fill="currentColor"/></svg>
+        <span>Optimize</span>
       </button>
+      <div class="rail-actions--split">
+        <button class="btn btn--tonal" id="btnMapsAction">
+          <span id="btnMapsActionLabel">Copy link</span>
+        </button>
+        <button class="btn btn--ghost" id="btnUndo" disabled>Undo</button>
+      </div>
     </div>
     <p class="rail-note" id="mapsNote" hidden></p>
+
+    <section class="tray" id="tray" aria-label="Unscheduled stops">
+      <div class="tray-head">
+        <h2 class="pane-title">Unscheduled</h2>
+        <span class="pane-count" id="trayCount">0</span>
+      </div>
+      <div class="search">
+        <svg class="search-ico" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10.5 10.5 L14 14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        <input type="text" id="searchInput" placeholder="Add a place or address" autocomplete="off" spellcheck="false">
+        <div class="search-results" id="searchResults" hidden></div>
+      </div>
+      <div class="tray-list" id="trayList"></div>
+      <button class="btn btn--ghost btn--wide" id="btnPaste">Paste a list</button>
+    </section>
 
     <footer class="rail-foot">
       <span class="status" id="netStatus"><i class="status-dot"></i><span id="netStatusText">Ready</span></span>
@@ -98,7 +108,7 @@ DESIGN.md, and every shipping raster carrying its provenance.
 
   <main class="line-pane">
     <div class="pane-head">
-      <h2 class="pane-title">The Line</h2>
+      <h2 class="pane-title">Schedule</h2>
       <div class="legend" id="legend"></div>
     </div>
     <div class="line-body">
@@ -107,22 +117,9 @@ DESIGN.md, and every shipping raster carrying its provenance.
     </div>
   </main>
 
-  <section class="tray" id="tray" aria-label="Unscheduled stops">
-    <div class="pane-head">
-      <h2 class="pane-title">Sidings</h2>
-      <span class="pane-count" id="trayCount">0</span>
-    </div>
-    <div class="search">
-      <input type="text" id="searchInput" placeholder="Find a place or paste an address" autocomplete="off" spellcheck="false">
-      <div class="search-results" id="searchResults" hidden></div>
-    </div>
-    <div class="tray-list" id="trayList"></div>
-    <button class="btn btn--ghost btn--wide" id="btnPaste">Paste a list</button>
-  </section>
-
   <section class="map-pane">
     <div id="map" class="map"></div>
-    <div class="map-scrim" id="mapScrim" hidden><span>Recolouring basemap…</span></div>
+    <div class="map-scrim" id="mapScrim" hidden><span>Preparing map…</span></div>
   </section>
 
 </div>
@@ -130,11 +127,11 @@ DESIGN.md, and every shipping raster carrying its provenance.
 <dialog class="sheet" id="pasteSheet">
   <form method="dialog" class="sheet-inner">
     <h3 class="sheet-title">Paste a list</h3>
-    <p class="sheet-help">One stop per line. <code>Name, Address</code> or just an address. CSV headers are detected.</p>
+    <p class="sheet-help">One stop per line — <code>Name, Address</code> or just an address. CSV headers are detected.</p>
     <textarea id="pasteBox" rows="12" spellcheck="false" placeholder="Rays Hell Burger, 1725 Wilson Blvd, Arlington VA&#10;Great Falls Park&#10;2001 Jefferson Davis Hwy, Arlington VA"></textarea>
     <div class="sheet-actions">
       <button class="btn btn--ghost" value="cancel">Cancel</button>
-      <button class="btn btn--primary" id="pasteConfirm" value="ok">Add to sidings</button>
+      <button class="btn btn--primary" id="pasteConfirm" value="ok">Add stops</button>
     </div>
   </form>
 </dialog>
@@ -145,13 +142,13 @@ DESIGN.md, and every shipping raster carrying its provenance.
     <label class="field"><span>Name</span><input type="text" id="stopName" autocomplete="off"></label>
     <label class="field"><span>Address</span><input type="text" id="stopAddr" autocomplete="off"></label>
     <div class="field-row">
-      <label class="field"><span>Dwell (min)</span><input type="number" id="stopDwell" min="0" step="5" value="30"></label>
+      <label class="field"><span>Time here (min)</span><input type="number" id="stopDwell" min="0" step="5" value="30"></label>
       <label class="field field--check"><input type="checkbox" id="stopPinned"><span>Fixed time</span></label>
     </div>
     <p class="field-note" id="stopGeoNote"></p>
     <div class="sheet-actions">
-      <button class="btn btn--ghost" value="cancel">Cancel</button>
       <button class="btn btn--danger" id="stopDelete" type="button">Delete</button>
+      <button class="btn btn--ghost" value="cancel">Cancel</button>
       <button class="btn btn--primary" value="ok">Save</button>
     </div>
   </form>
