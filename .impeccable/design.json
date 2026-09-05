@@ -151,7 +151,8 @@
     "Pixel-based drag tests must measure px-per-minute off the live grid; expandRows changes slot height.",
     "Coarse Pointer Rule \u2014 touch sizing keyed on @media (pointer: coarse); >=40px, 44px for destructive.",
     "Empty states name the available actions; the legend hides when nothing is scheduled; Optimize disables below two routable stops.",
-    "Names ellipsize by design and therefore always carry a title attribute (textContent/title only, never innerHTML)."
+    "Names ellipsize by design and therefore always carry a title attribute (textContent/title only, never innerHTML).",
+    "The starting point is not a stop: no grid slot, no sequence number, no dwell, excluded from the Stops count; a bearing dot on the map, a settings row in the rail."
   ],
   "exceptions": [
     {

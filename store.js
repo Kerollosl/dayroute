@@ -43,12 +43,26 @@ export const fmtMiles = (m) => {
   return mi >= 100 ? String(Math.round(mi)) : mi.toFixed(1).replace(/\.0$/, '');
 };
 
-const blank = () => ({ day: todayISO(), stops: [] });
+const blank = () => ({ day: todayISO(), stops: [], origin: null, originAsked: false });
 
 function migrate(raw) {
   if (!raw || typeof raw !== 'object' || !Array.isArray(raw.stops)) return blank();
+  const o = raw.origin;
   return {
     day: typeof raw.day === 'string' ? raw.day : todayISO(),
+    // The day's starting point. Not a stop: it has no dwell, no slot on the
+    // grid, and never counts toward "Stops". It exists so the optimiser has a
+    // real place to leave FROM — without one, the first stop costs nothing to
+    // reach and the opening leg is chosen arbitrarily.
+    origin: o && Number.isFinite(o.lat) && Number.isFinite(o.lng)
+      ? {
+          name: String(o.name ?? '').slice(0, 200),
+          address: String(o.address ?? '').slice(0, 400),
+          lat: o.lat, lng: o.lng,
+          source: o.source === 'geo' ? 'geo' : 'manual',
+        }
+      : null,
+    originAsked: !!raw.originAsked,
     stops: raw.stops.filter(Boolean).map((s) => ({
       id: s.id || uid(),
       name: String(s.name ?? '').slice(0, 200),
@@ -124,6 +138,31 @@ export class Store extends EventTarget {
   // -- reads ---------------------------------------------------------------
   get day() { return this.state.day; }
   get stops() { return this.state.stops; }
+  get origin() { return this.state.origin; }
+  get originAsked() { return this.state.originAsked; }
+
+  /**
+   * Set or clear the day's starting point. `null` clears it, which returns the
+   * optimiser to picking its own opening stop.
+   */
+  setOrigin(o, { checkpoint = true } = {}) {
+    if (checkpoint) this.checkpoint();
+    this.state.origin = o && Number.isFinite(o.lat) && Number.isFinite(o.lng)
+      ? {
+          name: String(o.name ?? '').slice(0, 200),
+          address: String(o.address ?? '').slice(0, 400),
+          lat: o.lat, lng: o.lng,
+          source: o.source === 'geo' ? 'geo' : 'manual',
+        }
+      : null;
+    this.commit();
+  }
+
+  /** Remember that we already asked the browser for a position, so we ask once. */
+  markOriginAsked() {
+    this.state.originAsked = true;
+    this.save();
+  }
 
   byId(id) { return this.state.stops.find((s) => s.id === id) || null; }
 

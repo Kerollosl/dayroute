@@ -198,9 +198,26 @@ export class RouteMap {
     for (const m of this.markers) m.remove();
     this.markers = [];
 
+    let seq = 0;
     stops.forEach((s, i) => {
       if (!Number.isFinite(s.lat) || !Number.isFinite(s.lng)) return;
       const el = document.createElement('div');
+      // The starting point is not a numbered stop: it gets a dot, not a badge,
+      // so the sequence still reads 1..n and the origin reads as "you began
+      // here" rather than as another errand.
+      if (s.isOrigin) {
+        el.className = 'pin pin--start';
+        el.dataset.stopId = s.id;
+        const dot = document.createElement('div');
+        dot.className = 'pin-start-dot';
+        const lbl = document.createElement('div');
+        lbl.className = 'pin-label';
+        lbl.textContent = s.name || s.address || 'Start';
+        el.append(lbl, dot);
+        this.markers.push(new maplibregl.Marker({ element: el, anchor: 'center' }).setLngLat([s.lng, s.lat]).addTo(this.map));
+        return;
+      }
+      seq += 1;
       el.className = 'pin' + (s.pinned ? ' is-pinned' : '') + (s.unfit ? ' is-unfit' : '') + (s.conflict ? ' is-conflict' : '') + (s.id === activeId ? ' is-active' : '');
       el.dataset.stopId = s.id;
       // A real pin: a station badge on a stem that points at the actual
@@ -209,7 +226,7 @@ export class RouteMap {
       // No `title` attribute — that renders the OS's own unstyled tooltip.
       const tick = document.createElement('div');
       tick.className = 'pin-tick';
-      tick.textContent = String(i + 1);
+      tick.textContent = String(seq);
       const stem = document.createElement('div');
       stem.className = 'pin-stem';
       const name = document.createElement('div');

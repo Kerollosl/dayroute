@@ -107,6 +107,12 @@ no stops — a key for marks that are not on screen is noise. `Optimize` disable
 below two routable stops rather than offering an action that provably cannot do
 anything.
 
+**The starting point is not a stop.** It has no grid slot, no sequence number,
+no dwell, and never counts toward "Stops". On the map it is a bearing dot
+(`.pin--start`), never a numbered badge, because it is not somewhere you go. In
+the rail it is a settings row — current value plus a chevron — the shape both
+platforms use for "this is the value, tap to change it".
+
 **FullCalendar sizing.** Never set `position` on `.fc-v-event` / `info.el` — FC
 sizes events by absolute top/bottom and overriding it makes them grow to fit text.
 `LABEL_INSET` in `schedule.js` must equal `.fc-v-event`'s `margin-left` (30px).

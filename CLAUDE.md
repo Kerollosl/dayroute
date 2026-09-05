@@ -78,6 +78,27 @@ passed to `optimize` **and** to both `plan` calls — `before` and `after` have 
 share a window or the savings figure is meaningless. `dayEnd` stays fixed;
 without an end bound the tail gap is infinite and nothing is ever unfit.
 
+**The origin is `origin: true`, not just `pinned: true`.** The day's starting
+point is a departure, not an appointment. `simulate` resets the clock to a
+pinned stop's `startMin`, so modelling the origin as merely pinned pinned the
+DEPARTURE to the first stop's own time — every arrival slid later by the
+inbound leg, and a fixed first appointment became unreachable ("Can't reach X
+in time") purely because an origin existed. `simulate` now records the origin's
+time and moves on with no dwell and no clock reset; `optimize` holds it at
+index 0 via `lo`, which is the first position anything else may occupy.
+
+**`dayWindow` only departs early for a FIXED appointment.** Leaving before the
+first scheduled stop is justified only when a pinned stop cannot otherwise be
+reached; a flexible stop simply shifts to whenever you arrive. Leading against
+the earliest *scheduled* stop instead made an all-flexible day start at 08:21
+for a 09:00 board, which is the same "don't drag my day earlier" complaint in
+a new costume.
+
+**`s.dwell || 30` reads an explicit 0 as missing.** `withIndex` applied that
+plus a 5-minute floor to the origin, which spent a phantom half hour parked at
+the starting point before the day began. The floor exists so a real stop has
+visible height on the grid; the origin is never drawn and keeps its true 0.
+
 **Never drag by hardcoded pixels in a test.** `expandRows` stretches slot height
 to fill the pane, so the same pixel offset is a different number of minutes
 depending on the day's length and the window size — a 2-stop day renders ~85px

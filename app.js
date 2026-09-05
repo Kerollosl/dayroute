@@ -25,6 +25,9 @@ const els = {
   dayPrev: $('dayPrev'), dayNext: $('dayNext'), dayToday: $('dayToday'), dayLabel: $('dayLabel'),
   netStatus: $('netStatus'), netStatusText: $('netStatusText'),
   legend: $('legend'), toasts: $('toasts'), lineEmpty: $('lineEmpty'),
+  btnOrigin: $('btnOrigin'), originValue: $('originValue'), originSheet: $('originSheet'),
+  originAddr: $('originAddr'), originNote: $('originNote'),
+  originUseGeo: $('originUseGeo'), originClear: $('originClear'),
   stopSheet: $('stopSheet'), stopSheetTitle: $('stopSheetTitle'),
   stopName: $('stopName'), stopAddr: $('stopAddr'), stopDwell: $('stopDwell'),
   stopPinned: $('stopPinned'), stopDelete: $('stopDelete'), stopGeoNote: $('stopGeoNote'),
@@ -88,14 +91,72 @@ function status(text, state = 'ok') {
  * "start earlier". The end bound stays fixed: without it the tail gap is
  * infinite and nothing is ever unfit.
  */
+const ORIGIN_ID = '__origin__';
+
+/**
+ * The starting point as a routing input: a pinned, zero-dwell stop that is
+ * always first. Modelling it this way means the existing anchor machinery
+ * carries it — `driveTime` charges the origin-to-first-stop leg, so the
+ * optimiser can no longer open wherever it likes for free, and `simulate`
+ * walks the clock from it with no dwell to pay.
+ *
+ * It is never a stop: it has no grid slot, no sequence number, and never
+ * counts toward "Stops".
+ */
+function originStop(dayStartMin) {
+  const o = store.origin;
+  if (!o || !Number.isFinite(o.lat) || !Number.isFinite(o.lng)) return null;
+  return {
+    id: ORIGIN_ID, name: o.name || 'Start', address: o.address || '',
+    lat: o.lat, lng: o.lng, dwell: 0, pinned: true, origin: true,
+    start: toHM(dayStartMin), day: store.day, geoStatus: 'ok',
+  };
+}
+
+/** Earliest scheduled minute on the board, or 08:00 when the day is empty. */
+function firstStartMin(stops) {
+  const t = stops.map((s) => toMin(s.start)).filter((v) => Number.isFinite(v));
+  return t.length ? Math.min(...t) : 8 * 60;
+}
+
+/** Prepend the origin to a routable list, when one is set. */
+function withOrigin(routable) {
+  const o = originStop(firstStartMin(routable));
+  return o ? [o, ...routable] : routable;
+}
+
 /** Stops on the current day that have coordinates — the routable population. */
 function routableToday() {
   return store.scheduled(store.day).filter((s) => Number.isFinite(s.lat) && Number.isFinite(s.lng));
 }
 
-function dayWindow(mstops) {
-  const starts = mstops.map((s) => s.startMin).filter((v) => Number.isFinite(v));
-  return starts.length ? { dayStart: Math.min(...starts) } : {};
+function dayWindow(mstops, m = null) {
+  const real = mstops.filter((s) => s.id !== ORIGIN_ID);
+  const starts = real.map((s) => s.startMin).filter((v) => Number.isFinite(v));
+  if (!starts.length) return {};
+  const earliest = Math.min(...starts);
+
+  // With a starting point, the day begins by DRIVING, so it has to begin early
+  // enough to reach the first stop at the time that stop is actually scheduled.
+  // Departing at the first stop's own clock time instead pushes every stop
+  // later by the inbound leg — which silently rescheduled the whole day and
+  // could make a fixed appointment unreachable ("Can't reach X in time") purely
+  // because an origin had been set.
+  const origin = mstops.find((s) => s.id === ORIGIN_ID);
+  if (!origin || !m) return { dayStart: earliest };
+
+  // Leaving before the first scheduled stop is only ever justified by a FIXED
+  // appointment that cannot be reached otherwise — you asked that optimising
+  // never drag the day earlier than the first event on the board. A flexible
+  // stop needs no lead: it simply shifts to whenever you arrive.
+  const firstPinned = real
+    .filter((s) => s.pinned)
+    .reduce((a, b) => (a == null || b.startMin < a.startMin ? b : a), null);
+  if (!firstPinned) return { dayStart: earliest };
+
+  const secs = m.durations?.[m.mi(origin)]?.[m.mi(firstPinned)];
+  const lead = Number.isFinite(secs) ? Math.ceil(secs / 60) : 0;
+  return { dayStart: Math.min(earliest, firstPinned.startMin - lead) };
 }
 
 function renderLegend() {
@@ -178,8 +239,13 @@ const tray = new Tray({
 // -- the recompute loop ----------------------------------------------------
 function withIndex(stops, m) {
   return stops.map((s) => ({
-    id: s.id, lat: s.lat, lng: s.lng, dwell: Math.max(5, s.dwell || 30),
-    pinned: !!s.pinned, startMin: toMin(s.start), mi: m.mi(s),
+    id: s.id, lat: s.lat, lng: s.lng,
+    // `s.dwell || 30` reads an explicit 0 as "missing". The 5-minute floor is
+    // there so a real stop always has visible height on the grid; the origin
+    // is never drawn and you spend no time at it, so it keeps its true 0.
+    // Without this the day began with a phantom half hour parked at home.
+    dwell: s.id === ORIGIN_ID ? 0 : Math.max(5, Number.isFinite(s.dwell) ? s.dwell : 30),
+    pinned: !!s.pinned, origin: !!s.origin, startMin: toMin(s.start), mi: m.mi(s),
   }));
 }
 
@@ -234,6 +300,7 @@ async function recompute({ fit = false, unfitIds = null } = {}) {
   const routable = dayStops.filter((s) => Number.isFinite(s.lat) && Number.isFinite(s.lng));
   els.totStops.textContent = String(dayStops.length);
   els.btnUndo.disabled = !store.canUndo();
+  renderOrigin();
 
   // Optimising needs two points to reorder between. Leaving the button live on
   // an empty or single-stop day offers an action that provably cannot do
@@ -259,36 +326,49 @@ async function recompute({ fit = false, unfitIds = null } = {}) {
   if (routable.length < 2) {
     emptyTotals();
     schedule.setPlan({ seqById: seqByIdEmpty, driveInById: new Map(), unfitIds: new Set(), conflictIds, orderedIds: routable.map((s) => s.id) });
-    map.setStops(routable);
+    const originOnly = originStop(firstStartMin(routable));
+    const sparse = [...(originOnly ? [{ ...originOnly, isOrigin: true }] : []), ...routable];
+    map.setStops(sparse);
     map.setRoute(null);
-    if (shouldFit && routable.length) map.fit(routable);
+    if (shouldFit && sparse.length) map.fit(sparse);
     if (conflictIds.size) status(`${conflictIds.size} appointments overlap`, 'error');
     else status('Ready', 'ok');
     return;
   }
 
-  const m = await R.fetchMatrix(routable);
+  const routeInput = withOrigin(routable);
+  const m = await R.fetchMatrix(routeInput);
   lastMatrix = m;
-  const mstops = withIndex(routable, m);
+  const mstops = withIndex(routeInput, m);
   const order = mstops.map((_, i) => i);           // time order IS the route order
-  const p = R.plan(order, mstops, m, dayWindow(mstops));
+  const p = R.plan(order, mstops, m, dayWindow(mstops, m));
 
+  // Sequence numbers and map pins belong to real stops; the origin is neither.
+  // The first leg now starts at the origin, so stop 1 finally reports a
+  // drive-in figure instead of nothing.
   const seqById = new Map();
   const driveInById = new Map();
   routable.forEach((s, i) => seqById.set(s.id, i + 1));
-  p.legs.forEach((leg) => driveInById.set(routable[leg.to].id, leg.duration));
+  p.legs.forEach((leg) => {
+    const to = routeInput[leg.to];
+    if (to && to.id !== ORIGIN_ID) driveInById.set(to.id, leg.duration);
+  });
 
   schedule.setPlan({ seqById, driveInById, unfitIds: unfitIds || new Set(), conflictIds, orderedIds: routable.map((s) => s.id) });
 
   els.totDrive.textContent = fmtDur(p.totalDur);
   els.totDist.textContent = fmtMiles(p.totalDist);
 
-  map.setStops(routable.map((s) => ({ ...s, unfit: unfitIds?.has(s.id), conflict: conflictIds.has(s.id) })));
-  if (shouldFit) map.fit(routable);
+  const originPin = originStop(firstStartMin(routable));
+  map.setStops([
+    ...(originPin ? [{ ...originPin, isOrigin: true }] : []),
+    ...routable.map((s) => ({ ...s, unfit: unfitIds?.has(s.id), conflict: conflictIds.has(s.id) })),
+  ]);
+  if (shouldFit) map.fit(routeInput);
 
-  links = G.buildLinks(routable);
+  links = G.buildLinks(routeInput);
   setMapsButtonState();
-  const caveat = G.linkCaveat(routable, links);
+  const caveat = G.linkCaveat(routeInput, links);
   els.mapsNote.textContent = caveat || '';
   els.mapsNote.hidden = !caveat;
 
@@ -300,7 +380,7 @@ async function recompute({ fit = false, unfitIds = null } = {}) {
   }
   else status('Ready', 'ok');
 
-  drawGeometry(routable, p.estimated);
+  drawGeometry(routeInput, p.estimated);
 }
 
 // Only this touches the network on a drag, and only after things settle.
@@ -320,19 +400,129 @@ function drawGeometry(stops, estimated) {
   }, 420);
 }
 
+// -- starting point --------------------------------------------------------
+
+/** The label shown on the rail row. */
+function originLabel(o) {
+  if (!o) return 'Set a starting point';
+  return o.name || o.address || `${o.lat.toFixed(4)}, ${o.lng.toFixed(4)}`;
+}
+
+function renderOrigin() {
+  const o = store.origin;
+  els.originValue.textContent = originLabel(o);
+  els.btnOrigin.classList.toggle('is-unset', !o);
+  els.btnOrigin.title = o ? `Starting from ${originLabel(o)}` : 'Set a starting point';
+}
+
+/** Ask the browser where we are. Resolves to null on refusal or failure. */
+function currentPosition({ timeout = 10000 } = {}) {
+  return new Promise((resolve) => {
+    if (!navigator.geolocation) return resolve(null);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      () => resolve(null),
+      { enableHighAccuracy: false, timeout, maximumAge: 5 * 60 * 1000 },
+    );
+  });
+}
+
+/** Turn a raw position into a named origin, naming it as well as we can. */
+async function originFromPosition(pos) {
+  const rev = await geo.reverse(pos.lat, pos.lng).catch(() => null);
+  return {
+    lat: pos.lat, lng: pos.lng, source: 'geo',
+    name: 'Current location',
+    address: rev?.label || '',
+  };
+}
+
+/**
+ * Offer the current location as the default, once. If the user refuses, or the
+ * browser cannot say, the app simply has no origin and behaves as it did
+ * before — this never blocks startup and never asks twice.
+ */
+async function seedOriginFromGeolocation() {
+  if (store.origin || store.originAsked) return;
+  store.markOriginAsked();
+  const pos = await currentPosition({ timeout: 8000 });
+  if (!pos || store.origin) return;
+  store.setOrigin(await originFromPosition(pos), { checkpoint: false });
+  toast('Starting from your current location.', 'ok');
+}
+
+function openOriginSheet() {
+  const o = store.origin;
+  els.originAddr.value = o && o.source !== 'geo' ? (o.address || o.name || '') : (o?.address || '');
+  els.originNote.textContent = o ? `Currently ${originLabel(o)}.` : '';
+  els.originNote.dataset.state = '';
+  els.originClear.hidden = !o;
+  els.originSheet.showModal();
+  setTimeout(() => els.originAddr.focus(), 30);
+}
+
+els.btnOrigin.addEventListener('click', openOriginSheet);
+
+els.originUseGeo.addEventListener('click', async () => {
+  els.originNote.dataset.state = '';
+  els.originNote.textContent = 'Finding you…';
+  const pos = await currentPosition();
+  if (!pos) {
+    els.originNote.dataset.state = 'bad';
+    els.originNote.textContent = 'Could not get your location. Check location permission for this site, or type an address.';
+    return;
+  }
+  const o = await originFromPosition(pos);
+  store.setOrigin(o);
+  els.originAddr.value = o.address || '';
+  els.originNote.dataset.state = 'ok';
+  els.originNote.textContent = `Starting from ${originLabel(o)}.`;
+  els.originClear.hidden = false;
+});
+
+els.originClear.addEventListener('click', () => {
+  store.setOrigin(null);
+  els.originSheet.close();
+  toast('Starting point cleared.', 'info');
+});
+
+els.originSheet.addEventListener('close', async () => {
+  if (els.originSheet.returnValue !== 'ok') return;
+  const typed = els.originAddr.value.trim();
+  if (!typed) return;                       // Save with an empty box changes nothing
+  const cur = store.origin;
+  if (cur && typed === (cur.address || '')) return;   // unchanged
+  status('Finding address…', 'busy');
+  const hit = await geo.resolve(typed);
+  if (!hit) {
+    status('Ready', 'ok');
+    toast('Could not find that address.', 'error');
+    return;
+  }
+  store.setOrigin({ lat: hit.lat, lng: hit.lng, name: '', address: hit.label || typed, source: 'manual' });
+  status('Ready', 'ok');
+});
+
 // -- optimise --------------------------------------------------------------
 async function optimise() {
   const routable = store.routable();
-  if (routable.length < 3) { toast('Add at least three located stops to optimise.', 'warn'); return; }
+  // With a starting point, even two stops have a real best order — which one to
+  // drive to first. Without one, two stops read the same either way.
+  const floor = store.origin ? 2 : 3;
+  if (routable.length < floor) {
+    toast(`Add at least ${floor === 2 ? 'two' : 'three'} located stops to optimise.`, 'warn');
+    return;
+  }
 
   els.btnOptimize.disabled = true;
   els.btnOptimize.classList.add('is-working');
   status('Optimizing…', 'busy');
   schedule.captureRects();
   try {
-    const m = await R.fetchMatrix(routable);
-    const mstops = withIndex(routable, m);
-    const win = dayWindow(mstops);
+    const routeInput = withOrigin(routable);
+    const m = await R.fetchMatrix(routeInput);
+    const mstops = withIndex(routeInput, m);
+    const win = dayWindow(mstops, m);
     const before = R.plan(mstops.map((_, i) => i), mstops, m, win);
     const { order, unfit } = R.optimize(mstops, m, win);
 
@@ -345,12 +535,14 @@ async function optimise() {
     const fairOrder = unfit.length ? R.comparisonOrder(order, unfit, mstops, m) : order;
     const after = R.plan(fairOrder, mstops, m, win);
 
-    const unfitIds = new Set(unfit.map((i) => routable[i].id));
+    const unfitIds = new Set(unfit.map((i) => routeInput[i].id));
 
     store.batch(() => {
       order.forEach((idx, k) => {
-        const s = routable[idx];
-        if (s.pinned) return;                       // an appointment keeps its clock time
+        const s = routeInput[idx];
+        // The origin is pinned, so it is skipped here anyway; the guard states
+        // the intent rather than relying on that coincidence.
+        if (s.id === ORIGIN_ID || s.pinned) return;  // an appointment keeps its clock time
         store.update(s.id, { start: toHM(after.times[k]) }, { checkpoint: false, silent: true });
       });
     });
@@ -495,3 +687,7 @@ tray.render();
 schedule.refresh();
 recompute();            // never gated on the map
 tray.geocodePending();
+
+// Offer the current location as the starting point, once, without blocking
+// startup. Refusal is fine: the app then behaves exactly as it did before.
+seedOriginFromGeolocation();

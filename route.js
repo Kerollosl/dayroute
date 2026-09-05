@@ -133,11 +133,16 @@ function simulate(order, stops, m, dayStart, dayEnd) {
   const times = new Array(order.length).fill(0);
   let t = dayStart;
   const first = stops[order[0]];
-  if (first?.pinned) t = Math.min(t, first.startMin);
+  if (first?.pinned && !first.origin) t = Math.min(t, first.startMin);
 
   for (let i = 0; i < order.length; i++) {
     const s = stops[order[i]];
     if (i > 0) t += dur(m, MI(m, stops, order[i - 1]), MI(m, stops, order[i])) / 60;
+    // The origin is a departure, not an appointment: it costs no dwell and it
+    // must not reset the clock. Treating it as a pinned stop pinned the
+    // DEPARTURE to the first stop's own time, which pushed every arrival later
+    // by the inbound leg and made a fixed first appointment unreachable.
+    if (s.origin) { times[i] = t; continue; }
     if (s.pinned) {
       if (t > s.startMin + 0.5) return { ok: false, times, lateAt: i, endMin: t };
       t = s.startMin;
@@ -175,10 +180,15 @@ const valid = (order, stops, m, dayStart, dayEnd) =>
  */
 export function optimize(stops, m, { dayStart = DAY_START_MIN, dayEnd = DAY_END_MIN } = {}) {
   const idx = stops.map((_, i) => i);
-  const pinned = idx.filter((i) => stops[i].pinned).sort((a, b) => stops[a].startMin - stops[b].startMin);
-  const flex = idx.filter((i) => !stops[i].pinned);
+  // The origin, when present, is index 0 of the route and never moves off it.
+  // `lo` is the first position anything else may occupy.
+  const originIdx = idx.filter((i) => stops[i].origin);
+  const lo = originIdx.length;
+  const pinned = idx.filter((i) => stops[i].pinned && !stops[i].origin)
+    .sort((a, b) => stops[a].startMin - stops[b].startMin);
+  const flex = idx.filter((i) => !stops[i].pinned && !stops[i].origin);
 
-  let order = [...pinned];
+  let order = [...originIdx, ...pinned];
   const unfit = [];
 
   // Longest-first placement: the awkward stops get the pick of the gaps.
@@ -186,7 +196,7 @@ export function optimize(stops, m, { dayStart = DAY_START_MIN, dayEnd = DAY_END_
 
   for (const s of queue) {
     let best = null;
-    for (let pos = 0; pos <= order.length; pos++) {
+    for (let pos = lo; pos <= order.length; pos++) {
       const cand = [...order.slice(0, pos), s, ...order.slice(pos)];
       if (!valid(cand, stops, m, dayStart, dayEnd)) continue;
       const cost = driveTime(cand, stops, m);
@@ -199,13 +209,13 @@ export function optimize(stops, m, { dayStart = DAY_START_MIN, dayEnd = DAY_END_
   // or-opt: relocate one stop at a time while it pays.
   for (let pass = 0; pass < 4; pass++) {
     let moved = false;
-    for (let i = 0; i < order.length; i++) {
+    for (let i = lo; i < order.length; i++) {
       if (stops[order[i]].pinned) continue;
       const without = order.filter((_, k) => k !== i);
       const s = order[i];
       const base = driveTime(order, stops, m);
       let best = null;
-      for (let pos = 0; pos <= without.length; pos++) {
+      for (let pos = lo; pos <= without.length; pos++) {
         const cand = [...without.slice(0, pos), s, ...without.slice(pos)];
         if (!valid(cand, stops, m, dayStart, dayEnd)) continue;
         const cost = driveTime(cand, stops, m);
@@ -219,7 +229,7 @@ export function optimize(stops, m, { dayStart = DAY_START_MIN, dayEnd = DAY_END_
   // 2-opt, restricted to runs that contain no appointment.
   for (let pass = 0; pass < 4; pass++) {
     let improved = false;
-    for (let i = 0; i < order.length - 1; i++) {
+    for (let i = lo; i < order.length - 1; i++) {
       for (let j = i + 1; j < order.length; j++) {
         if (order.slice(i, j + 1).some((k) => stops[k].pinned)) continue;
         const cand = [...order.slice(0, i), ...order.slice(i, j + 1).reverse(), ...order.slice(j + 1)];

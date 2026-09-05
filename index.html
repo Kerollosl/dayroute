@@ -53,6 +53,19 @@ DESIGN.md, and every shipping raster carrying its provenance.
       <button class="daynav-today" id="dayToday">Today</button>
     </nav>
 
+    <button class="origin" id="btnOrigin">
+      <svg class="origin-ico" viewBox="0 0 16 16" aria-hidden="true">
+        <circle cx="8" cy="8" r="2.4" fill="currentColor"/>
+        <circle cx="8" cy="8" r="5.4" fill="none" stroke="currentColor" stroke-width="1.4"/>
+        <path d="M8 .8v2M8 13.2v2M.8 8h2M13.2 8h2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+      </svg>
+      <span class="origin-text">
+        <span class="origin-label">Starting from</span>
+        <span class="origin-value" id="originValue">Set a starting point</span>
+      </span>
+      <svg class="origin-chev" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3 L11 8 L6 13" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+
     <section class="totals" aria-label="Day totals">
       <div class="total">
         <span class="total-figure" id="totDrive">0:00</span>
@@ -127,6 +140,21 @@ DESIGN.md, and every shipping raster carrying its provenance.
   </section>
 
 </div>
+
+<dialog class="sheet" id="originSheet">
+  <form method="dialog" class="sheet-inner">
+    <h3 class="sheet-title">Starting point</h3>
+    <p class="sheet-help">Where the day begins. The route, the drive times and the Maps link all start here.</p>
+    <button type="button" class="btn btn--tonal btn--wide" id="originUseGeo">Use my current location</button>
+    <label class="field"><span>Or enter an address</span><input type="text" id="originAddr" autocomplete="off" spellcheck="false"></label>
+    <p class="field-note" id="originNote"></p>
+    <div class="sheet-actions">
+      <button class="btn btn--danger" id="originClear" type="button">Clear</button>
+      <button class="btn btn--ghost" value="cancel">Cancel</button>
+      <button class="btn btn--primary" id="originSave" value="ok">Save</button>
+    </div>
+  </form>
+</dialog>
 
 <dialog class="sheet" id="pasteSheet">
   <form method="dialog" class="sheet-inner">

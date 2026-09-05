@@ -123,6 +123,28 @@ export async function resolve(address) {
   return value;
 }
 
+/**
+ * Coordinates to a readable address. Used for the starting point when it comes
+ * from the browser's position, so it reads as a place rather than a pair of
+ * decimals. A failure is not an error: the caller falls back to a plain label
+ * and the coordinates still route perfectly well.
+ */
+export async function reverse(lat, lng) {
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  const key = `@${lat.toFixed(5)},${lng.toFixed(5)}`;
+  if (cache.has(key)) return cache.get(key);
+  let label = null;
+  try {
+    const url = `${NOMINATIM.replace('/search', '/reverse')}?format=jsonv2&zoom=18&lat=${lat}&lon=${lng}`;
+    const j = await queued(() => getJSON(url));
+    label = j && typeof j.display_name === 'string' ? j.display_name : null;
+  } catch { /* offline or throttled — the coordinates are still usable */ }
+  const value = label ? { lat, lng, label } : null;
+  cache.set(key, value);
+  persist();
+  return value;
+}
+
 /** Resolve many, in order, respecting the same queue. Reports progress. */
 export async function resolveAll(addresses, onEach) {
   const out = [];
