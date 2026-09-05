@@ -78,6 +78,26 @@ passed to `optimize` **and** to both `plan` calls — `before` and `after` have 
 share a window or the savings figure is meaningless. `dayEnd` stays fixed;
 without an end bound the tail gap is infinite and nothing is ever unfit.
 
+**A dialog's Cancel must be `type="button"`.** In `<form method="dialog">`,
+pressing Enter in any text field fires implicit submission, which targets the
+FIRST submit button in DOM order. A plain `<button value="cancel">Cancel</button>`
+sitting above Save therefore made Enter *discard* the sheet — measured
+`returnValue: cancel`, nothing saved. It hit the starting point and the stop
+editor alike (Enter while renaming a stop threw the edit away). Every Cancel is
+now `type="button"` with `data-close`, so Save is the only submit button.
+
+**Validate on `submit`, not on `close`.** A `close` handler runs after the
+dialog is already gone, so a failed lookup discarded what the person had typed
+and reported the miss in a toast — indistinguishable from the sheet silently
+refusing to save. The origin form resolves inside `submit`, `preventDefault()`s
+on failure, and keeps the sheet open with the text intact and an inline note.
+
+**`resolve()` and `search()` must share provider routing.** They drifted:
+`search` learned to send house-number queries to Nominatim while `resolve` still
+went Photon-first, so picking a suggestion gave the right place but typing the
+same address and pressing Save resolved "1500 wilson blvd arlington va" to a
+different street entirely.
+
 **Never request geolocation on page load.** A permission prompt with no user
 gesture behind it is what browsers auto-dismiss, and the first version also
 recorded "asked" before learning the outcome — so one dismissal disabled the

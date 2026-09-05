@@ -142,7 +142,7 @@ DESIGN.md, and every shipping raster carrying its provenance.
 </div>
 
 <dialog class="sheet" id="originSheet">
-  <form method="dialog" class="sheet-inner">
+  <form method="dialog" class="sheet-inner" id="originForm">
     <h3 class="sheet-title">Starting point</h3>
     <p class="sheet-help">Where the day begins. The route, the drive times and the Maps link all start here.</p>
     <button type="button" class="btn btn--tonal btn--wide" id="originUseGeo">Use my current location</button>
@@ -156,7 +156,7 @@ DESIGN.md, and every shipping raster carrying its provenance.
     <p class="field-note" id="originNote"></p>
     <div class="sheet-actions">
       <button class="btn btn--danger" id="originClear" type="button">Clear</button>
-      <button class="btn btn--ghost" value="cancel">Cancel</button>
+      <button type="button" class="btn btn--ghost" data-close="cancel">Cancel</button>
       <button class="btn btn--primary" id="originSave" value="ok">Save</button>
     </div>
   </form>
@@ -168,7 +168,7 @@ DESIGN.md, and every shipping raster carrying its provenance.
     <p class="sheet-help">One stop per line — <code>Name, Address</code> or just an address. CSV headers are detected.</p>
     <textarea id="pasteBox" rows="12" spellcheck="false" placeholder="Rays Hell Burger, 1725 Wilson Blvd, Arlington VA&#10;Great Falls Park&#10;2001 Jefferson Davis Hwy, Arlington VA"></textarea>
     <div class="sheet-actions">
-      <button class="btn btn--ghost" value="cancel">Cancel</button>
+      <button type="button" class="btn btn--ghost" data-close="cancel">Cancel</button>
       <button class="btn btn--primary" id="pasteConfirm" value="ok">Add stops</button>
     </div>
   </form>
@@ -186,7 +186,7 @@ DESIGN.md, and every shipping raster carrying its provenance.
     <p class="field-note" id="stopGeoNote"></p>
     <div class="sheet-actions">
       <button class="btn btn--danger" id="stopDelete" type="button">Delete</button>
-      <button class="btn btn--ghost" value="cancel">Cancel</button>
+      <button type="button" class="btn btn--ghost" data-close="cancel">Cancel</button>
       <button class="btn btn--primary" value="ok">Save</button>
     </div>
   </form>

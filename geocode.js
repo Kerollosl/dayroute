@@ -145,16 +145,20 @@ export async function resolve(address) {
   if (!q) return null;
   if (cache.has(q)) return cache.get(q);
 
-  let hit = null;
-  try {
-    hit = fromPhoton(await queued(() => getJSON(`${PHOTON}?q=${encodeURIComponent(q)}&limit=1`)))[0] || null;
-  } catch { /* fall through to the backup */ }
+  // Same provider routing as `search`: Photon ranks named features above street
+  // addresses, so resolving "1500 wilson blvd arlington va" through it returned
+  // a different street entirely. A house-number query goes to Nominatim first.
+  const askPhoton = async () =>
+    fromPhoton(await queued(() => getJSON(`${PHOTON}?q=${encodeURIComponent(q)}&limit=1`)))[0] || null;
+  const askNominatim = async () =>
+    fromNominatim(await queued(() => getJSON(`${NOMINATIM}?format=jsonv2&addressdetails=1&limit=1&q=${encodeURIComponent(q)}`)))[0] || null;
 
+  const [first, second] = looksLikeStreetAddress(q) ? [askNominatim, askPhoton] : [askPhoton, askNominatim];
+
+  let hit = null;
+  try { hit = await first(); } catch { /* fall through to the backup */ }
   if (!hit) {
-    try {
-      const url = `${NOMINATIM}?format=jsonv2&limit=1&q=${encodeURIComponent(q)}`;
-      hit = fromNominatim(await queued(() => getJSON(url)))[0] || null;
-    } catch { /* both providers down or offline; cache nothing */ }
+    try { hit = await second(); } catch { /* both providers down or offline; cache nothing */ }
   }
 
   const value = hit ? { lat: hit.lat, lng: hit.lng, label: hit.label || hit.name } : null;

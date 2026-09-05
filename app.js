@@ -28,7 +28,7 @@ const els = {
   btnOrigin: $('btnOrigin'), originValue: $('originValue'), originSheet: $('originSheet'),
   originAddr: $('originAddr'), originNote: $('originNote'),
   originUseGeo: $('originUseGeo'), originClear: $('originClear'),
-  originResults: $('originResults'),
+  originResults: $('originResults'), originForm: $('originForm'),
   stopSheet: $('stopSheet'), stopSheetTitle: $('stopSheetTitle'),
   stopName: $('stopName'), stopAddr: $('stopAddr'), stopDwell: $('stopDwell'),
   stopPinned: $('stopPinned'), stopDelete: $('stopDelete'), stopGeoNote: $('stopGeoNote'),
@@ -401,6 +401,15 @@ function drawGeometry(stops, estimated) {
   }, 420);
 }
 
+// A dialog's Cancel must not be a submit button: implicit submission (Enter in
+// any text field) fires the FIRST submit button in DOM order, so a plain
+// <button value="cancel"> sitting above Save meant Enter discarded the sheet.
+// Every Cancel is now type="button" and closes explicitly.
+document.addEventListener('click', (e) => {
+  const b = e.target.closest('[data-close]');
+  if (b) b.closest('dialog')?.close(b.dataset.close);
+});
+
 // -- starting point --------------------------------------------------------
 
 /** The label shown on the rail row. */
@@ -584,28 +593,39 @@ els.originClear.addEventListener('click', () => {
   toast('Starting point cleared.', 'info');
 });
 
-els.originSheet.addEventListener('close', async () => {
-  if (els.originSheet.returnValue !== 'ok') return;
+/**
+ * Resolve on submit, and close only once it worked. Letting the dialog close
+ * first and reporting the miss in a toast afterwards threw away what the person
+ * had typed and looked exactly like the sheet silently failing to save.
+ */
+els.originForm.addEventListener('submit', async (e) => {
   renderOriginHits([]);
   const typed = els.originAddr.value.trim();
-  if (!typed) return;                       // Save with an empty box changes nothing
   const cur = store.origin;
-  if (cur && typed === (cur.address || '')) return;   // unchanged, or already taken
-  // A suggestion the field still reflects is already resolved; re-geocoding the
-  // same string would only risk a different, worse match.
+
+  // Nothing to resolve: an empty box, an unchanged value, or a suggestion the
+  // field still reflects (already resolved — re-geocoding it could only find a
+  // worse match). Let the dialog close normally.
+  if (!typed) return;
+  if (cur && typed === (cur.address || '')) return;
   if (originPick && typed === originPick.label) {
     store.setOrigin({ lat: originPick.lat, lng: originPick.lng, name: '', address: originPick.label, source: 'manual' });
     return;
   }
-  status('Finding address…', 'busy');
+
+  e.preventDefault();
+  els.originNote.dataset.state = '';
+  els.originNote.textContent = 'Finding that address…';
   const hit = await geo.resolve(typed);
   if (!hit) {
-    status('Ready', 'ok');
-    toast('Could not find that address.', 'error');
-    return;
+    els.originNote.dataset.state = 'bad';
+    els.originNote.textContent = 'Could not find that address. Try picking one of the suggestions, or add the city and state.';
+    els.originAddr.focus();
+    els.originAddr.select();
+    return;                                  // sheet stays open, text intact
   }
   store.setOrigin({ lat: hit.lat, lng: hit.lng, name: '', address: hit.label || typed, source: 'manual' });
-  status('Ready', 'ok');
+  els.originSheet.close('ok');
 });
 
 // -- optimise --------------------------------------------------------------
