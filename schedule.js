@@ -444,64 +444,117 @@ export class Schedule {
     const order = this.plan?.orderedIds || [];
     const idAt = (st) => st.id;
 
-    // Track: one continuous line through every station on the day.
-    if (stations.length > 1) {
-      const d = `M ${TRACK_X} ${stations[0].y} L ${TRACK_X} ${stations[stations.length - 1].y}`;
-      svg.appendChild(el('path', { d, stroke: '#070C22', 'stroke-width': 8, fill: 'none', 'stroke-linecap': 'round' }));
-      svg.appendChild(el('path', { d, stroke: '#E21D2D', 'stroke-width': 4, fill: 'none', 'stroke-linecap': 'round' }));
+    // Theme inks come from the stylesheet, never hardcoded here — the palette
+    // has been replaced once already and every literal in this file silently
+    // kept pointing at the old world.
+    const cs = getComputedStyle(document.documentElement);
+    const C = (name, fallback) => (cs.getPropertyValue(name).trim() || fallback);
+    const T = {
+      paper: C('--paper', '#E6E1D4'),
+      raise: C('--paper-raise', '#FFFFFF'),
+      rule: C('--rule', '#C9C2AF'),
+      inkStrong: C('--ink-strong', '#141814'),
+      inkMid: C('--ink-mid', '#454E49'),
+      inkDim: C('--ink-dim', '#5E6661'),
+      green: C('--green', '#0E7A46'),
+      greenInk: C('--green-ink', '#095430'),
+      clay: C('--clay', '#B0431F'),
+    };
+
+    const stopOf = (st) => (st.id ? this.store.byId(st.id) : null);
+    const endMinOf = (s0) => toMin(s0.start) + Math.max(5, s0.dwell || 30);
+
+    // The line is drawn in segments, not as one undifferentiated stroke, so
+    // its thickness carries meaning: heavy where you are stopped, medium where
+    // you are actually driving, dashed where you are simply free. A dot in the
+    // middle of a gap said none of that.
+    for (const st of stations) {
+      if (st.yEnd - st.y < 2) continue;
+      svg.appendChild(el('line', {
+        x1: TRACK_X, y1: st.y, x2: TRACK_X, y2: st.yEnd,
+        stroke: T.green, 'stroke-width': 7, 'stroke-linecap': 'round',
+      }));
     }
 
-    // Drive legs: the gap between two stations, labelled with its cost. The
-    // event's own row also carries this figure (.ev-drive) so a squeezed box
-    // never loses it — but showing both at once is the same number twice.
-    // The tick, drawn here in the actual gap, is the primary reading; the row
-    // copy is a fallback for when the gap is too tight to hold a tick at all,
-    // so each event is told which one it's responsible for.
+    // Drive legs. The gap between two stops is not one thing: part of it is
+    // the drive, the rest is slack. Drawing them proportionally means the
+    // shape itself answers "do I have room here?" before you read a number.
     for (let i = 1; i < stations.length; i++) {
       const prev = stations[i - 1], cur = stations[i];
-      const gap = cur.y - prev.yEnd;
+      const gapPx = cur.y - prev.yEnd;
       const secs = this.plan?.driveInById?.get(idAt(cur));
-      cur.node?.classList.toggle('has-gap-tick', secs != null && gap >= 16);
-      if (secs == null || gap < 16) continue;
-      const midY = prev.yEnd + gap / 2;
-      const g = el('g');
-      g.appendChild(el('rect', { x: TRACK_X - 5, y: midY - 7, width: 10, height: 14, fill: '#0B1230' }));
-      // A routine drive leg is neutral. Amber is reserved for the unfit state
-      // alone — one ink, one meaning.
-      g.appendChild(el('circle', { cx: TRACK_X, cy: midY, r: 2.5, fill: '#7C8AAC' }));
-      const t = el('text', {
-        x: TRACK_X + 10, y: midY + 3.5, fill: '#9FAECC',
+      cur.node?.classList.toggle('has-gap-tick', secs != null && gapPx >= 16);
+      if (secs == null || gapPx < 16) continue;
+
+      const prevStop = stopOf(prev), curStop = stopOf(cur);
+      const gapMin = prevStop && curStop ? toMin(curStop.start) - endMinOf(prevStop) : 0;
+      const driveMin = secs / 60;
+      const ratio = gapMin > 0 ? Math.max(0, Math.min(1, driveMin / gapMin)) : 1;
+      const driveEndY = prev.yEnd + gapPx * ratio;
+
+      // Driving: solid, still the route's own ink, thinner than a stop.
+      svg.appendChild(el('line', {
+        x1: TRACK_X, y1: prev.yEnd, x2: TRACK_X, y2: driveEndY,
+        stroke: T.green, 'stroke-width': 3,
+      }));
+      // Slack: the same line, released — dashed and quiet.
+      if (driveEndY < cur.y - 1) {
+        svg.appendChild(el('line', {
+          x1: TRACK_X, y1: driveEndY, x2: TRACK_X, y2: cur.y,
+          stroke: T.rule, 'stroke-width': 3, 'stroke-dasharray': '2 4', 'stroke-linecap': 'round',
+        }));
+      }
+
+      // The duration rides a chip on the driven stretch, not a floating dot.
+      const chipY = prev.yEnd + (driveEndY - prev.yEnd) / 2;
+      const label = el('text', {
+        x: TRACK_X + 14, y: chipY + 3.5, fill: T.greenInk,
         'font-size': '11', 'font-family': 'Archivo, sans-serif',
-        'letter-spacing': '.08em', 'font-weight': '600',
+        'letter-spacing': '.04em', 'font-weight': '700',
       });
-      t.textContent = fmtLeg(secs);
-      g.appendChild(t);
-      svg.appendChild(g);
+      label.textContent = fmtLeg(secs);
+      svg.appendChild(label);
+      const w = label.getBBox().width;
+      const chip = el('rect', {
+        x: TRACK_X + 9, y: chipY - 8, width: w + 10, height: 16, rx: 3,
+        fill: T.raise, stroke: T.rule, 'stroke-width': 1,
+      });
+      svg.insertBefore(chip, label);
+
+      // Slack, when there's a meaningful amount of it, is worth naming too —
+      // it's the answer to "can another errand fit in here?"
+      const slackMin = Math.round(gapMin - driveMin);
+      if (slackMin >= 10 && cur.y - driveEndY >= 22) {
+        const sl = el('text', {
+          x: TRACK_X + 14, y: driveEndY + (cur.y - driveEndY) / 2 + 3.5, fill: T.inkDim,
+          'font-size': '11', 'font-family': 'Archivo, sans-serif',
+          'letter-spacing': '.04em', 'font-weight': '400',
+        });
+        sl.textContent = `${slackMin} min free`;
+        svg.appendChild(sl);
+      }
     }
 
-    // Stations. An appointment is an interchange: a ring, not a dot.
-    // Station state carries the legend's three inks: porcelain interchange for a
-    // fixed appointment, cobalt for a flexible stop, amber for one that will not
-    // fit. Radius alone was a 2.5px distinction doing work colour should share.
+    // Stations. An appointment is an interchange: a filled ring, not a dot.
     const labelX = Math.max(20, colLeft) + LABEL_INSET;
     stations.forEach((st) => {
-      const s = st.id ? this.store.byId(st.id) : null;
+      const s = stopOf(st);
       const pinned = !!s?.pinned;
       const conflict = this.plan?.conflictIds?.has(st.id);
       const unfit = conflict || this.plan?.unfitIds?.has(st.id);
       const hot = st.id === this.hoverId || st.id === this.selectedId;
-      const ink = unfit ? '#FFC20E' : pinned ? '#FFFFFF' : '#1E5BFF';
+      const ink = unfit ? T.clay : pinned ? T.inkStrong : T.green;
       const r = (pinned ? 7.5 : 5) * (hot ? 1.34 : 1);
 
-      // The tick that joins the station to its label. Without it the dot and the
-      // label read as two objects for one stop.
+      // The tick that joins the station to its label. Without it the ring and
+      // the label read as two objects for one stop.
       svg.appendChild(el('line', {
         x1: TRACK_X + r, y1: st.y, x2: labelX - 3, y2: st.y,
-        stroke: hot ? ink : '#2A3A66', 'stroke-width': hot ? 1.6 : 1,
+        stroke: hot ? ink : T.rule, 'stroke-width': hot ? 1.6 : 1,
       }));
       svg.appendChild(el('circle', {
         cx: TRACK_X, cy: st.y, r,
-        fill: '#0B1230', stroke: ink, 'stroke-width': 3,
+        fill: T.raise, stroke: ink, 'stroke-width': 3,
       }));
       if (!pinned) svg.appendChild(el('circle', { cx: TRACK_X, cy: st.y, r: hot ? 2.8 : 2, fill: ink }));
       // A struck cross-tick marks a collision specifically — two appointments

@@ -6,11 +6,14 @@
 // belong to the same material as the panels around them, and the route ink is
 // the only saturated thing on screen.
 
-const STYLE_URL = 'https://tiles.openfreemap.org/styles/dark';
+const STYLE_URL = 'https://tiles.openfreemap.org/styles/positron';
 
-const ENAMEL = { r: 0x07, g: 0x0C, b: 0x22 };
-const HIGH   = { r: 0x8F, g: 0xA3, b: 0xCC };
-const WATER  = { r: 0x0A, g: 0x16, b: 0x3C };
+// The basemap is recoloured onto the same paper the interface is printed on,
+// so the map is a panel of the same document rather than a foreign dark tile
+// set dropped into it.
+const PAPER  = { r: 0xE6, g: 0xE1, b: 0xD4 };
+const DEEP   = { r: 0x45, g: 0x4E, b: 0x49 };
+const WATER  = { r: 0xC3, g: 0xD2, b: 0xCC };
 
 const ROUTE_SRC = 'dr-route';
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
@@ -56,12 +59,14 @@ function enamelise(str, role) {
   const c = parseColor(str);
   if (!c) return str;
   const L = LUMA(c);
+  // Light ground: luminance now maps the other way round — dark source pixels
+  // become the darker paper tones, bright ones approach the paper itself.
   let out;
-  if (role === 'water') out = mix(WATER, { r: 0x1E, g: 0x3A, b: 0x78 }, L * 0.7);
-  else if (role === 'road') out = mix(ENAMEL, { r: 0x35, g: 0x47, b: 0x80 }, clamp(L * 1.9, 0.12, 1));
-  else if (role === 'label') out = mix({ r: 0x5A, g: 0x6C, b: 0x99 }, HIGH, L);
-  else if (role === 'halo') out = ENAMEL;
-  else out = mix(ENAMEL, { r: 0x22, g: 0x2E, b: 0x58 }, clamp(L * 1.25, 0, 1));
+  if (role === 'water') out = mix({ r: 0xA8, g: 0xBE, b: 0xB6 }, WATER, L);
+  else if (role === 'road') out = mix({ r: 0xB2, g: 0xAA, b: 0x97 }, PAPER, clamp(L * 0.85, 0, 1));
+  else if (role === 'label') out = mix(DEEP, { r: 0x7A, g: 0x82, b: 0x7C }, L);
+  else if (role === 'halo') out = PAPER;
+  else out = mix({ r: 0xD9, g: 0xD3, b: 0xC3 }, PAPER, clamp(L, 0, 1));
   return c.a < 1 ? `rgba(${out.r},${out.g},${out.b},${c.a})` : hex(out);
 }
 
@@ -95,7 +100,7 @@ function walk(value, role, inExpr = false) {
 function tintStyle(style) {
   for (const layer of style.layers || []) {
     if (layer.id === 'background') {
-      layer.paint = { ...(layer.paint || {}), 'background-color': hex(ENAMEL) };
+      layer.paint = { ...(layer.paint || {}), 'background-color': hex(PAPER) };
       continue;
     }
     if (!layer.paint) continue;
@@ -127,7 +132,7 @@ export class RouteMap {
       const res = await fetch(STYLE_URL);
       style = tintStyle(await res.json());
     } catch {
-      style = { version: 8, sources: {}, layers: [{ id: 'background', type: 'background', paint: { 'background-color': hex(ENAMEL) } }] };
+      style = { version: 8, sources: {}, layers: [{ id: 'background', type: 'background', paint: { 'background-color': hex(PAPER) } }] };
     }
 
     this.map = new maplibregl.Map({
@@ -153,13 +158,13 @@ export class RouteMap {
     this.map.addLayer({
       id: 'dr-route-casing', type: 'line', source: ROUTE_SRC,
       layout: { 'line-cap': 'round', 'line-join': 'round' },
-      paint: { 'line-color': '#070C22', 'line-width': ['interpolate', ['linear'], ['zoom'], 8, 7, 14, 12] },
+      paint: { 'line-color': '#FFFFFF', 'line-width': ['interpolate', ['linear'], ['zoom'], 8, 7, 14, 12] },
     });
     this.map.addLayer({
       id: 'dr-route-ink', type: 'line', source: ROUTE_SRC,
       layout: { 'line-cap': 'round', 'line-join': 'round' },
       paint: {
-        'line-gradient': ['interpolate', ['linear'], ['line-progress'], 0, '#E21D2D', 1, '#E21D2D'],
+        'line-gradient': ['interpolate', ['linear'], ['line-progress'], 0, '#0E7A46', 1, '#0E7A46'],
         'line-width': ['interpolate', ['linear'], ['zoom'], 8, 3.5, 14, 6],
       },
     });
@@ -167,7 +172,7 @@ export class RouteMap {
       id: 'dr-route-est', type: 'line', source: ROUTE_SRC,
       layout: { 'line-cap': 'butt', 'line-join': 'round', visibility: 'none' },
       paint: {
-        'line-color': '#E21D2D',
+        'line-color': '#0E7A46',
         'line-width': ['interpolate', ['linear'], ['zoom'], 8, 3, 14, 5],
         'line-opacity': 0.6,
         'line-dasharray': [2, 1.6],
@@ -188,11 +193,21 @@ export class RouteMap {
       const el = document.createElement('div');
       el.className = 'pin' + (s.pinned ? ' is-pinned' : '') + (s.unfit ? ' is-unfit' : '') + (s.conflict ? ' is-conflict' : '') + (s.id === activeId ? ' is-active' : '');
       el.dataset.stopId = s.id;
-      el.innerHTML = '<div class="pin-tick"></div>';
-      el.firstChild.textContent = String(i + 1);
-      el.title = `${i + 1}. ${s.name || s.address}`;
+      // A real pin: a station badge on a stem that points at the actual
+      // coordinate, echoing the Line's own ring language (white fill, state
+      // ink as the ring) so the map and the diagram read as one system.
+      // No `title` attribute — that renders the OS's own unstyled tooltip.
+      const tick = document.createElement('div');
+      tick.className = 'pin-tick';
+      tick.textContent = String(i + 1);
+      const stem = document.createElement('div');
+      stem.className = 'pin-stem';
+      const name = document.createElement('div');
+      name.className = 'pin-label';
+      name.textContent = s.name || s.address || '';
+      el.append(name, tick, stem);
       el.addEventListener('click', (e) => { e.stopPropagation(); this.onPinClick?.(s.id); });
-      this.markers.push(new maplibregl.Marker({ element: el, anchor: 'center' }).setLngLat([s.lng, s.lat]).addTo(this.map));
+      this.markers.push(new maplibregl.Marker({ element: el, anchor: 'bottom' }).setLngLat([s.lng, s.lat]).addTo(this.map));
     });
   }
 
@@ -202,14 +217,14 @@ export class RouteMap {
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const paint = (p) => {
       if (!this.map?.getLayer('dr-route-ink')) return;
-      const clear = 'rgba(226,29,45,0)';
+      const clear = 'rgba(14,122,70,0)';
       // Stops must be STRICTLY ascending: clamp so 0 < q < q+d < 1 always holds.
       const q = Math.min(0.99, Math.max(0.005, p));
       const d = 0.004;
       this.map.setPaintProperty('dr-route-ink', 'line-gradient', p >= 1
-        ? ['interpolate', ['linear'], ['line-progress'], 0, '#E21D2D', 1, '#E21D2D']
+        ? ['interpolate', ['linear'], ['line-progress'], 0, '#0E7A46', 1, '#0E7A46']
         : ['interpolate', ['linear'], ['line-progress'],
-            0, '#E21D2D', q, '#E21D2D', q + d, clear, 1, clear]);
+            0, '#0E7A46', q, '#0E7A46', q + d, clear, 1, clear]);
     };
     if (reduced) { paint(1); return; }
     const t0 = performance.now();

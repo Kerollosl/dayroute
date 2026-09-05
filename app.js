@@ -81,7 +81,15 @@ function status(text, state = 'ok') {
 
 function renderLegend() {
   els.legend.textContent = '';
-  const items = [['#FFFFFF', 'Fixed'], ['#1E5BFF', 'Flexible'], ['#FFC20E', "Won't fit"]];
+  // Read straight from the stylesheet so the legend can never drift from the
+  // inks the diagram actually draws with.
+  const cs = getComputedStyle(document.documentElement);
+  const v = (n, f) => cs.getPropertyValue(n).trim() || f;
+  const items = [
+    [v('--ink-strong', '#141814'), 'Fixed'],
+    [v('--green', '#0E7A46'), 'Flexible'],
+    [v('--clay', '#B0431F'), "Won't fit"],
+  ];
   for (const [c, label] of items) {
     const i = document.createElement('span');
     i.className = 'legend-item';
