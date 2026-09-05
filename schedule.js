@@ -394,6 +394,7 @@ export class Schedule {
     const name = document.createElement('span');
     name.className = 'ev-name';
     name.textContent = arg.event.title;
+    name.title = arg.event.title;
     top.append(seq, name);
 
     const inConflict = this.plan?.conflictIds?.has(s?.id);

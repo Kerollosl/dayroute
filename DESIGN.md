@@ -93,6 +93,20 @@ them already colours state (accent = flexible, `--text` = fixed, `--danger` =
 won't-fit) and the badge names it; a stripe repeated the same fact a third time and
 tripped the `side-tab` detector honestly.
 
+**The Coarse Pointer Rule.** Touch targets are sized under
+`@media (pointer: coarse)`, not by viewport width — a narrow window on a laptop
+is still a mouse, and a large tablet is still a thumb. Everything interactive
+measures at least 40px there, and the destructive control (remove a stop) gets a
+full 44px. Desktop sizes stay at 32-34px, which is correct for a cursor.
+
+**Empty states name the way in.** A bare ruled grid is a blank page. The
+schedule's empty state states the two available actions (click a time, or drag
+from Unscheduled) and keeps `pointer-events: none` so the click-a-time
+affordance it describes still works through it. The legend hides when there are
+no stops — a key for marks that are not on screen is noise. `Optimize` disables
+below two routable stops rather than offering an action that provably cannot do
+anything.
+
 **FullCalendar sizing.** Never set `position` on `.fc-v-event` / `info.el` — FC
 sizes events by absolute top/bottom and overriding it makes them grow to fit text.
 `LABEL_INSET` in `schedule.js` must equal `.fc-v-event`'s `margin-left` (30px).

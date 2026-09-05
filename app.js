@@ -24,7 +24,7 @@ const els = {
   btnMapsAction: $('btnMapsAction'), btnMapsActionLabel: $('btnMapsActionLabel'), mapsNote: $('mapsNote'),
   dayPrev: $('dayPrev'), dayNext: $('dayNext'), dayToday: $('dayToday'), dayLabel: $('dayLabel'),
   netStatus: $('netStatus'), netStatusText: $('netStatusText'),
-  legend: $('legend'), toasts: $('toasts'),
+  legend: $('legend'), toasts: $('toasts'), lineEmpty: $('lineEmpty'),
   stopSheet: $('stopSheet'), stopSheetTitle: $('stopSheetTitle'),
   stopName: $('stopName'), stopAddr: $('stopAddr'), stopDwell: $('stopDwell'),
   stopPinned: $('stopPinned'), stopDelete: $('stopDelete'), stopGeoNote: $('stopGeoNote'),
@@ -88,6 +88,11 @@ function status(text, state = 'ok') {
  * "start earlier". The end bound stays fixed: without it the tail gap is
  * infinite and nothing is ever unfit.
  */
+/** Stops on the current day that have coordinates — the routable population. */
+function routableToday() {
+  return store.scheduled(store.day).filter((s) => Number.isFinite(s.lat) && Number.isFinite(s.lng));
+}
+
 function dayWindow(mstops) {
   const starts = mstops.map((s) => s.startMin).filter((v) => Number.isFinite(v));
   return starts.length ? { dayStart: Math.min(...starts) } : {};
@@ -230,6 +235,17 @@ async function recompute({ fit = false, unfitIds = null } = {}) {
   els.totStops.textContent = String(dayStops.length);
   els.btnUndo.disabled = !store.canUndo();
 
+  // Optimising needs two points to reorder between. Leaving the button live on
+  // an empty or single-stop day offers an action that provably cannot do
+  // anything, which is worse than saying so up front.
+  els.btnOptimize.disabled = routable.length < 2;
+
+  // A key for marks that aren't on screen is noise; so is a ruled empty grid
+  // with nothing telling you how to fill it.
+  const bare = dayStops.length === 0;
+  els.lineEmpty.hidden = !bare;
+  els.legend.hidden = bare;
+
   const conflictIds = currentConflicts();
   const routableIds = new Set(routable.map((s) => s.id));
   const shouldFit = fit || routableChanged(routableIds);
@@ -351,7 +367,7 @@ async function optimise() {
     schedule.playReorder();
 
     if (unfitIds.size) {
-      toast(`${unfitIds.size} stop${unfitIds.size > 1 ? 's' : ''} will not fit the day — marked on the Line.`, 'warn');
+      toast(`${unfitIds.size} stop${unfitIds.size > 1 ? 's' : ''} will not fit the day — marked in the schedule.`, 'warn');
     } else if (saved > 30) {
       toast(`${fmtDur(saved)} less driving.`, 'ok');
     } else {
@@ -361,7 +377,7 @@ async function optimise() {
     toast('Could not optimise — routing service unreachable.', 'error');
     status('Routing offline', 'error');
   } finally {
-    els.btnOptimize.disabled = false;
+    els.btnOptimize.disabled = routableToday().length < 2;
     els.btnOptimize.classList.remove('is-working');
   }
 }

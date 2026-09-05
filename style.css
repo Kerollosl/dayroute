@@ -12,9 +12,7 @@
      once. Grey lets the map and the green carry all of the colour. */
   --bg:         #F5F5F7;
   --surface:    #FFFFFF;
-  --surface-2:  #FAFAFA;
   --hover:      #F0F0F3;
-  --pressed:    #E8E8EC;
 
   /* Separators are hairlines in ink at low alpha, never a grey paint: they sit
      correctly on both the ground and a white card without a second token. */
@@ -36,21 +34,14 @@
   --accent-hover: #096540;
   --accent-wash:  rgba(11, 122, 75, .09);
   --accent-tint:  rgba(11, 122, 75, .16);
-  --accent-edge:  rgba(11, 122, 75, .32);
 
   /* Attention. Only ever a real fault: won't-fit, collision, failed lookup. */
   --danger:      #D93025;
   --danger-wash: rgba(217, 48, 37, .08);
-  --danger-edge: rgba(217, 48, 37, .30);
 
-  --fixed: var(--text);   /* an appointment that cannot move */
+  --fixed: var(--text);        /* an appointment that cannot move */
+  --on-accent: #FFFFFF;        /* text/glyphs on any saturated fill */
 
-  /* Roles ------------------------------------------------------------------ */
-  --route:  var(--accent);
-  --pinned: var(--fixed);
-  --flex:   var(--accent);
-  --warn:   var(--danger);
-  --ok:     var(--accent);
 
   /* Type — the system face. Shipping a webfont is itself a tell here: native
      apps use the platform's own text, and matching that is most of why an
@@ -67,8 +58,7 @@
   --fs-4: 15px;  /* emphasis: stop names, section titles */
   --fs-5: 17px;  /* sub-head: dialog titles */
   --fs-6: 20px;  /* wordmark */
-  --fs-7: 26px;  /* secondary figure */
-  --fs-8: 32px;  /* lead figure */
+  --fs-7: 26px;  /* secondary figure */  /* lead figure */
 
   --lh-tight: 1.1;
   --lh-label: 1.25;
@@ -77,8 +67,6 @@
   /* Metrics ---------------------------------------------------------------- */
   --rail-w:  clamp(248px, 20vw, 292px);
   --line-w:  clamp(340px, 30vw, 452px);
-  --track-w: 5px;
-  --tick-r:  6px;
   --hair:    1px;
 
   /* Spacing — 4px grid. */
@@ -88,9 +76,7 @@
   --space-4: 16px;
   --space-5: 20px;
   --space-6: 24px;
-  --space-7: 32px;
   --pad: var(--space-4);
-  --gap: var(--space-3);
 
   /* Radius — one ramp, applied consistently. Both reference platforms round
      everything; the previous "hard-edged diagram, soft chrome" split is what
@@ -276,7 +262,7 @@ code { font-family: var(--font-mono); font-size: .92em; }
 .btn:disabled { opacity: .38; cursor: not-allowed; }
 .btn-ico { width: 16px; height: 16px; flex: none; }
 
-.btn--primary { background: var(--accent); color: #fff; box-shadow: var(--shadow-1); }
+.btn--primary { background: var(--accent); color: var(--on-accent); box-shadow: var(--shadow-1); }
 .btn--primary:hover:not(:disabled) { background: var(--accent-hover); }
 .btn--primary.is-working { pointer-events: none; }
 .btn--primary.is-working .btn-ico { animation: depart 1100ms var(--ease) infinite; }
@@ -290,7 +276,7 @@ code { font-family: var(--font-mono); font-size: .92em; }
    that is important but not the one the screen is about. */
 .btn--tonal { background: var(--accent-wash); color: var(--accent); }
 .btn--tonal:hover:not(:disabled) { background: var(--accent-tint); }
-.btn--tonal.is-ready { background: var(--accent); color: #fff; box-shadow: var(--shadow-1); }
+.btn--tonal.is-ready { background: var(--accent); color: var(--on-accent); box-shadow: var(--shadow-1); }
 .btn--tonal.is-ready:hover:not(:disabled) { background: var(--accent-hover); }
 
 .btn--ghost { background: rgba(0, 0, 0, .05); color: var(--text-2); }
@@ -350,6 +336,16 @@ code { font-family: var(--font-mono); font-size: .92em; }
 .line-body { position: relative; flex: 1; min-height: 0; }
 .line-grid { position: absolute; inset: 0; }
 .line-overlay { position: absolute; inset: 0; pointer-events: none; z-index: 3; }
+/* An empty grid is a blank page, not an invitation. This names the two ways in
+   and then gets out of the way — pointer-events stay off so the click-a-time
+   affordance it describes still works straight through it. */
+.line-empty {
+  position: absolute; inset: 0; z-index: 4; pointer-events: none;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: var(--space-1); padding: var(--space-6); text-align: center;
+}
+.line-empty-title { font-size: var(--fs-4); font-weight: 590; color: var(--text-2); }
+.line-empty-body  { font-size: var(--fs-3); font-weight: 400; color: var(--text-3); max-width: 26ch; line-height: var(--lh-read); }
 
 /* FullCalendar, restyled.
    NOTE: never set `position` on .fc-v-event / info.el — FC sizes events by
@@ -603,7 +599,7 @@ code { font-family: var(--font-mono); font-size: .92em; }
   background: var(--accent);
   display: grid; place-items: center;
   font-weight: 600; font-size: var(--fs-2);
-  color: #fff; font-variant-numeric: tabular-nums;
+  color: var(--on-accent); font-variant-numeric: tabular-nums;
   box-shadow: 0 1px 3px rgba(0, 0, 0, .3), 0 2px 8px rgba(0, 0, 0, .16);
   transition: transform var(--t-base) var(--ease-out), background var(--t-fast) var(--ease);
 }
@@ -681,7 +677,7 @@ code { font-family: var(--font-mono); font-size: .92em; }
   padding: var(--space-2) var(--space-4); background: rgba(28, 29, 31, .94);
   border-radius: var(--r-pill);
   font-size: var(--fs-3); font-weight: 400; line-height: var(--lh-label);
-  color: #fff; max-width: 78vw;
+  color: var(--on-accent); max-width: 78vw;
   box-shadow: var(--shadow-3);
   animation: toast-in var(--t-base) var(--ease-out);
 }
@@ -723,4 +719,21 @@ code { font-family: var(--font-mono); font-size: .92em; }
   }
   .siding:hover, .fc .fc-v-event:hover { transform: none; }
   .pin:hover .pin-tick, .pin.is-hover .pin-tick, .pin.is-active .pin-tick { transform: none; }
+}
+
+/* Touch pointers get real targets. Apple asks 44px, Material 48; the desktop
+   sizes here measure 27-34px, which is fine for a mouse and not for a thumb.
+   Keyed on the pointer, not the viewport — a small window on a laptop is still
+   a mouse, and a large tablet is still a finger. */
+@media (pointer: coarse) {
+  .btn { min-height: 44px; }
+  .daynav { grid-template-columns: 44px 1fr 44px auto; }
+  .daynav-btn, .daynav-date { min-height: 40px; }
+  .daynav-today { min-height: 40px; padding-inline: var(--space-3); }
+  .search input { min-height: 44px; }
+  .search-hit { padding: var(--space-3) var(--space-2); }
+  .siding { padding-block: var(--space-3); }
+  /* Destructive, so it gets a full target rather than a padded glyph. */
+  .siding-x { min-width: 44px; min-height: 44px; padding: 0; display: grid; place-items: center; }
+  .maplibregl-ctrl-group button { width: 40px !important; height: 40px !important; }
 }

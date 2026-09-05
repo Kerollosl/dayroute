@@ -148,7 +148,10 @@
     "Card Stripe Ban \u2014 event cards carry no coloured left edge; the track and badge already say it.",
     "Never set position on .fc-v-event / info.el.",
     "LABEL_INSET must equal .fc-v-event margin-left (30px).",
-    "Pixel-based drag tests must measure px-per-minute off the live grid; expandRows changes slot height."
+    "Pixel-based drag tests must measure px-per-minute off the live grid; expandRows changes slot height.",
+    "Coarse Pointer Rule \u2014 touch sizing keyed on @media (pointer: coarse); >=40px, 44px for destructive.",
+    "Empty states name the available actions; the legend hides when nothing is scheduled; Optimize disables below two routable stops.",
+    "Names ellipsize by design and therefore always carry a title attribute (textContent/title only, never innerHTML)."
   ],
   "exceptions": [
     {

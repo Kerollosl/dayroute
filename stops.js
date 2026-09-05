@@ -148,7 +148,7 @@ export class Tray {
     });
     this.els.searchInput.value = '';
     this._renderHits([]);
-    this.toast(`${hit.name} added to sidings.`, 'ok');
+    this.toast(`${hit.name} added.`, 'ok');
   }
 
   /** Resolve every stop still missing coordinates, one at a time. */
@@ -183,7 +183,7 @@ export class Tray {
     if (!sidings.length) {
       const p = document.createElement('p');
       p.className = 'tray-empty';
-      p.textContent = 'Nothing waiting. Search for a place, or paste a list, then drag a stop onto the Line.';
+      p.textContent = 'Nothing here yet. Add a place above, or paste a list, then drag it onto the schedule.';
       list.appendChild(p);
       return;
     }
@@ -196,9 +196,10 @@ export class Tray {
 
       const tick = document.createElement('div'); tick.className = 'siding-tick';
       const mid = document.createElement('div'); mid.style.minWidth = '0';
-      const nm = document.createElement('div'); nm.className = 'siding-name'; nm.textContent = s.name || s.address;
+      const nm = document.createElement('div'); nm.className = 'siding-name'; nm.textContent = s.name || s.address; nm.title = s.name || s.address;
       const ad = document.createElement('div'); ad.className = 'siding-addr';
       ad.textContent = s.geoStatus === 'fail' ? 'Not found — click to edit' : (s.address || '');
+      ad.title = ad.textContent;
       mid.append(nm, ad);
       const x = document.createElement('button');
       x.className = 'siding-x'; x.type = 'button'; x.dataset.del = s.id;
