@@ -1,0 +1,187 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-03T00:00:00Z",
+  "title": "Design System: dayroute — The Midnight Line",
+  "extensions": {
+    "colorMeta": {
+      "enamel":         { "role": "neutral", "displayName": "Enamel Ground",    "canonical": "#0B1230", "tonalRamp": ["#010206", "#040712", "#070B1E", "#0A102A", "#292F49", "#64687B", "#9FA2AE", "#DADBE0"] },
+      "enamel-raise":   { "role": "neutral", "displayName": "Enamel Raise",     "canonical": "#0E1838", "tonalRamp": ["#020307", "#050915", "#090F23", "#0C1531", "#2B3450", "#666C80", "#A0A4B1", "#DBDCE1"] },
+      "enamel-hover":   { "role": "neutral", "displayName": "Enamel Hover",     "canonical": "#12204A", "tonalRamp": ["#020409", "#070C1B", "#0B142E", "#101C41", "#2F3B60", "#68718C", "#A2A7B8", "#DBDEE4"] },
+      "enamel-sink":    { "role": "neutral", "displayName": "Enamel Sink",      "canonical": "#070C22", "tonalRamp": ["#010104", "#03040D", "#040715", "#060A1E", "#252A3D", "#616573", "#9EA0A8", "#DADBDE"] },
+      "hairline":       { "role": "neutral", "displayName": "Hairline",        "canonical": "#1E2C57", "tonalRamp": ["#04050A", "#0B1020", "#131B36", "#1A264C", "#39466B", "#707994", "#A7ACBD", "#DDDFE6"] },
+      "hairline-soft":  { "role": "neutral", "displayName": "Hairline Soft",   "canonical": "#16214333", "tonalRamp": ["#04050A", "#0B1020", "#131B36", "#1A264C", "#39466B", "#707994", "#A7ACBD", "#DDDFE6"] },
+      "porcelain":      { "role": "neutral", "displayName": "Porcelain — Fixed Ink", "canonical": "#FFFFFF", "tonalRamp": ["#1F1F1F", "#5F5F5F", "#9F9F9F", "#DFDFDF", "#FFFFFF", "#FFFFFF", "#FFFFFF", "#FFFFFF"] },
+      "ink":            { "role": "neutral", "displayName": "Ink",             "canonical": "#E8ECF6", "tonalRamp": ["#1C1C1E", "#56585B", "#919399", "#CBCED7", "#EBEEF7", "#F0F3F9", "#F6F8FB", "#FCFCFE"] },
+      "ink-mid":        { "role": "neutral", "displayName": "Ink Mid",         "canonical": "#9FAECC", "tonalRamp": ["#131518", "#3B414C", "#636C7F", "#8B98B2", "#ABB8D2", "#C2CCDF", "#D9DFEB", "#F1F3F7"] },
+      "ink-dim":        { "role": "neutral", "displayName": "Ink Dim",         "canonical": "#7C8AAC", "tonalRamp": ["#0F1115", "#2E3340", "#4D566B", "#6C7996", "#8C98B6", "#ACB5CA", "#CCD1DE", "#EBEDF3"] },
+      "scarlet":        { "role": "primary", "displayName": "Scarlet — Route Ink", "canonical": "#E21D2D", "tonalRamp": ["#1B0305", "#540B11", "#8D121C", "#C61927", "#E63846", "#ED6F7A", "#F4A6AC", "#FBDDE0"] },
+      "scarlet-hover":  { "role": "primary", "displayName": "Scarlet Hover",   "canonical": "#C4121F", "tonalRamp": ["#180204", "#49070C", "#7A0B13", "#AB101B", "#CB2F3A", "#D96871", "#E8A2A7", "#F6DBDD"] },
+      "scarlet-lift":   { "role": "primary", "displayName": "Scarlet Lift",    "canonical": "#FF6B75", "tonalRamp": ["#1F0D0E", "#5F282B", "#9F4349", "#DF5E66", "#FF7D86", "#FFA1A7", "#FFC5C9", "#FFE9EA"] },
+      "cobalt":         { "role": "secondary", "displayName": "Cobalt — Flexible Station", "canonical": "#1E5BFF", "tonalRamp": ["#040B1F", "#0B225F", "#13399F", "#1A50DF", "#396FFF", "#7097FF", "#A7BFFF", "#DDE6FF"] },
+      "cobalt-ink":     { "role": "secondary", "displayName": "Cobalt Ink",      "canonical": "#6E9BFF", "tonalRamp": ["#0D131F", "#293A5F", "#45619F", "#6088DF", "#80A7FF", "#A3BFFF", "#C6D8FF", "#E9F0FF"] },
+      "amber":          { "role": "tertiary", "displayName": "Amber — Attention Ink", "canonical": "#FFC20E", "tonalRamp": ["#1F1702", "#5F4805", "#9F7909", "#DFAA0C", "#FFC92B", "#FFD866", "#FFE7A0", "#FFF6DB"] },
+      "green":          { "role": "tertiary", "displayName": "Green — Confirmation", "canonical": "#22B14C", "tonalRamp": ["#041509", "#0D421C", "#156E2F", "#1E9B42", "#3DBA62", "#73CD8D", "#A8E0B9", "#DEF3E4"] },
+      "green-lift":     { "role": "tertiary", "displayName": "Green Lift",     "canonical": "#56D882", "tonalRamp": ["#0A1A10", "#205030", "#368751", "#4BBD72", "#6BDD91", "#94E6B0", "#BDF0CE", "#E6F9EC"] },
+      "connector":      { "role": "neutral", "displayName": "Connector",      "canonical": "#2A3A66", "tonalRamp": ["#05070E", "#0F1526", "#19233E", "#233156", "#3C4C79", "#71809E", "#A6B0C3", "#DBDFE8"] }
+    },
+    "typographyMeta": {
+      "micro":          { "displayName": "Micro", "purpose": "11px, the system's floor. Badges, meta/address lines, footnotes — both the uppercase signage caps and a set of plain reading-adjacent lines, told apart by weight and line-height, not size." },
+      "ui-text":        { "displayName": "UI Text", "purpose": "13px, the most-shared step. Buttons, inputs, names, sequence numbers — both interactive/identifying UI text and reading text (sheet help, form values, the paste textarea, toasts)." },
+      "sub-head":       { "displayName": "Sub-head", "purpose": "16px. Declared for dialog titles and tight-context brand, but its one real consumer is the tray's delete glyph (×) — sheet-title and pane-title are actually set one step down, at ui-text/13px." },
+      "compact-stat":   { "displayName": "Compact Stat", "purpose": "19px. The optimisation delta figure and the day-nav prev/next chevrons — a figure and a nav glyph sharing a size coincidentally." },
+      "wordmark":       { "displayName": "Wordmark", "purpose": "23px. The brand name; the mobile-breakpoint secondary total figure shares this size coincidentally." },
+      "secondary-lead": { "displayName": "Secondary Lead", "purpose": "27px. The desktop miles/stop-count totals beside the lead figure." },
+      "mobile-lead":    { "displayName": "Mobile Lead", "purpose": "33px. The driving-total lead figure at ≤900px." },
+      "primary-lead":   { "displayName": "Primary Lead", "purpose": "39px. The driving-total lead figure on desktop — the single largest number in the system." },
+      "mono":           { "displayName": "Mono", "purpose": "The paste-a-list textarea (13px, on-scale, line-height 1.7 — a bare literal, not one of the three --lh- roles) and inline code (a relative 0.92em, the system's one type value outside the fixed scale)." }
+    },
+    "shadows": [
+      { "name": "pin-pinned-ring", "value": "0 0 0 3px var(--porcelain), 0 0 0 5px var(--enamel)", "purpose": "The system's one real box-shadow — fakes a second concentric ring on a fixed-appointment map marker, which a plain border can't produce on a MapLibre marker element. Not an elevation device." }
+    ],
+    "motion": [
+      { "name": "t-fast", "value": "120ms", "purpose": "Default duration for ordinary state change: button/input/station hover and focus, background and colour transitions." },
+      { "name": "t-base", "value": "220ms", "purpose": "Toast enter animation; the arrow-travel and pin-hover transform durations." },
+      { "name": "t-move", "value": "440ms", "purpose": "Named duration for spatial motion; the reorder FLIP's actual hardcoded duration (460ms) sits close to but not exactly on this token, since the Web Animations API call can't read the CSS custom property." },
+      { "name": "ease", "value": "cubic-bezier(.2, .7, .3, 1)", "purpose": "The original easing curve — every ordinary state transition and the Optimise arrow's working-state loop." },
+      { "name": "ease-out", "value": "cubic-bezier(.16, 1, .3, 1)", "purpose": "The travel curve, reserved for things that move through space: the reorder FLIP, the arrow hover-slide, the pin/station hover-lift. Reused as a literal string (or its equivalent cubic ease-out shape) inside the JS-driven count-up and route draw-on, which can't reference the CSS custom property directly." }
+    ],
+    "breakpoints": [
+      { "name": "compact", "value": "1180px" },
+      { "name": "stacked", "value": "900px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The one filled, scarlet action in the system — Optimise. Its arrow travels on hover and loops a departing keyframe while the optimiser is working.",
+      "html": "<button class=\"ds-btn ds-btn-primary\"><span>Optimise</span><svg viewBox=\"0 0 16 16\" aria-hidden=\"true\" class=\"ds-btn-ico\"><path d=\"M2 8h9M8 4l4 4-4 4\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"/></svg></button>",
+      "css": "@keyframes ds-depart { 0% { transform: translateX(-3px); opacity: 0; } 35% { opacity: 1; } 100% { transform: translateX(9px); opacity: 0; } } .ds-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 16px; font-family: Archivo, sans-serif; font-weight: 600; font-size: 13px; letter-spacing: .12em; text-transform: uppercase; border: 1px solid transparent; border-radius: 5px; cursor: pointer; transition: background 120ms cubic-bezier(.2,.7,.3,1), border-color 120ms cubic-bezier(.2,.7,.3,1), color 120ms cubic-bezier(.2,.7,.3,1), transform 120ms cubic-bezier(.2,.7,.3,1); } .ds-btn:active { transform: translateY(1px) scale(.99); } .ds-btn-ico { width: 15px; height: 15px; flex: none; transition: transform 220ms cubic-bezier(.16,1,.3,1); } .ds-btn-primary { background: var(--scarlet); color: var(--porcelain); } .ds-btn-primary:hover { background: #C4121F; } .ds-btn-primary:hover .ds-btn-ico { transform: translateX(3px); } .ds-btn-primary:active { background: var(--enamel); border-color: var(--scarlet); color: var(--scarlet); } .ds-btn-primary.is-working { pointer-events: none; } .ds-btn-primary.is-working .ds-btn-ico { animation: ds-depart 900ms cubic-bezier(.2,.7,.3,1) infinite; } .ds-btn-primary:focus-visible { outline: 2px solid var(--cobalt); outline-offset: 2px; }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "The system's secondary action — hairline border, ink-mid label, e.g. Undo.",
+      "html": "<button class=\"ds-btn ds-btn-ghost\">Undo</button>",
+      "css": ".ds-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 16px; font-family: Archivo, sans-serif; font-weight: 600; font-size: 13px; letter-spacing: .12em; text-transform: uppercase; border-radius: 5px; cursor: pointer; background: transparent; transition: border-color 120ms cubic-bezier(.2,.7,.3,1), color 120ms cubic-bezier(.2,.7,.3,1), transform 120ms cubic-bezier(.2,.7,.3,1); } .ds-btn:active { transform: translateY(1px) scale(.99); } .ds-btn-ghost { border: 1px solid var(--hairline); color: var(--ink-mid); } .ds-btn-ghost:hover { border-color: var(--ink-mid); color: var(--porcelain); } .ds-btn-ghost:focus-visible { outline: 2px solid var(--cobalt); outline-offset: 2px; } .ds-btn-ghost:disabled { opacity: .32; cursor: not-allowed; }"
+    },
+    {
+      "name": "Line Button",
+      "kind": "button",
+      "refersTo": "button-line",
+      "description": "The only button that borrows the flexible-station ink (cobalt). Its state-machine use is the maps-handoff toggle — see the Maps Handoff component for the is-ready state.",
+      "html": "<button class=\"ds-btn ds-btn-line\">Copy Maps link</button>",
+      "css": ".ds-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 16px; font-family: Archivo, sans-serif; font-weight: 600; font-size: 13px; letter-spacing: .12em; text-transform: uppercase; border-radius: 5px; cursor: pointer; background: transparent; transition: background 120ms cubic-bezier(.2,.7,.3,1), color 120ms cubic-bezier(.2,.7,.3,1), transform 120ms cubic-bezier(.2,.7,.3,1); } .ds-btn:active { transform: translateY(1px) scale(.99); } .ds-btn-line { border: 1px solid var(--cobalt); color: var(--cobalt-ink); } .ds-btn-line:hover { background: var(--cobalt); color: var(--porcelain); } .ds-btn-line:focus-visible { outline: 2px solid var(--cobalt); outline-offset: 2px; }"
+    },
+    {
+      "name": "Station Badges",
+      "kind": "chip",
+      "refersTo": "station-fixed",
+      "description": "The Line's two exception chips. There is no badge for the flexible/cobalt state — flexible is the diagram's unmarked default.",
+      "html": "<div class=\"ds-badge-row\"><span class=\"ds-badge ds-badge-pin\">Fixed</span><span class=\"ds-badge ds-badge-unfit\">Won't fit</span></div>",
+      "css": ".ds-badge-row { display: flex; gap: 8px; font-family: Archivo, sans-serif; } .ds-badge { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; padding: 0 4px; border: 1px solid currentColor; }  .ds-badge-pin { color: var(--porcelain); } .ds-badge-unfit { color: var(--amber); }"
+    },
+    {
+      "name": "Station Card",
+      "kind": "card",
+      "refersTo": "station-fixed",
+      "description": "De-boxed since the animate pass: no card at rest. A shared hover/selection surface reaches back to the track so the tick, connector, and label light as one object; unfit/no-geo state now lives on the name's text colour, not a border.",
+      "html": "<div class=\"ds-station is-pinned\"><div class=\"ds-station-top\"><span class=\"ds-station-seq\">2</span><span class=\"ds-station-name\">Dentist — Dr. Nguyen</span><span class=\"ds-badge ds-badge-pin\">Fixed</span></div><div class=\"ds-station-meta\">0:07 drive in · 1500 Wilson Blvd, Arlington VA</div></div>",
+      "css": ".ds-station { position: relative; background: transparent; border: 0; border-radius: 0; box-shadow: none; padding: 4px 8px 4px 4px; margin-left: 34px; font-family: Archivo, sans-serif; transition: background 120ms cubic-bezier(.2,.7,.3,1); } .ds-station::before { content: ''; position: absolute; inset: 0 0 0 -34px; background: var(--enamel-hover); opacity: 0; transition: opacity 120ms cubic-bezier(.2,.7,.3,1); pointer-events: none; } .ds-station:hover::before { opacity: .62; } .ds-station.is-selected::before { opacity: .9; } .ds-station.is-unfit .ds-station-name { color: var(--amber); } .ds-station.is-nogeo .ds-station-name { color: var(--ink-mid); } .ds-station-top { position: relative; display: flex; align-items: baseline; gap: 6px; } .ds-station-seq { font-family: 'Archivo Narrow', Archivo, sans-serif; font-weight: 700; font-variant-numeric: tabular-nums; font-size: 13px; color: var(--porcelain); min-width: 13px; } .ds-station-name { font-weight: 600; font-size: 13px; color: var(--porcelain); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .ds-station-meta { position: relative; font-size: 11px; line-height: 1.25; color: var(--ink-dim); font-variant-numeric: tabular-nums; margin-top: 1px; } .ds-badge { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; padding: 0 4px; border: 1px solid currentColor; } .ds-badge-pin { color: var(--porcelain); }"
+    },
+    {
+      "name": "Siding Card",
+      "kind": "card",
+      "refersTo": "station-flexible",
+      "description": "The tray's unscheduled-stop card — the same enamel/hairline construction as the Line's stations, grabbable for drag-onto-the-Line. Rounded at --radius-chrome since a siding is tool chrome, not diagram.",
+      "html": "<div class=\"ds-siding\"><span class=\"ds-siding-tick is-geo\"></span><div><div class=\"ds-siding-name\">Great Falls Park</div><div class=\"ds-siding-addr\">9200 Old Dominion Dr, McLean VA</div></div><span class=\"ds-siding-x\">&times;</span></div>",
+      "css": ".ds-siding { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px; padding: 8px 12px; background: var(--enamel); border: 1px solid var(--hairline); border-radius: 5px; cursor: grab; font-family: Archivo, sans-serif; transition: border-color 120ms cubic-bezier(.2,.7,.3,1), background 120ms cubic-bezier(.2,.7,.3,1), transform 120ms cubic-bezier(.16,1,.3,1); } .ds-siding:hover { border-color: var(--ink-mid); background: var(--enamel-raise); transform: translateX(3px); } .ds-siding:active { cursor: grabbing; transform: translateX(1px) scale(.995); } .ds-siding.is-dragging { opacity: .4; cursor: grabbing; } .ds-siding-tick { width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--ink-dim); transition: background 120ms cubic-bezier(.2,.7,.3,1), transform 220ms cubic-bezier(.16,1,.3,1); } .ds-siding:hover .ds-siding-tick { transform: scale(1.35); } .ds-siding-tick.is-geo { border-color: var(--porcelain); background: var(--porcelain); } .ds-siding-name { font-size: 13px; font-weight: 600; color: var(--porcelain); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .ds-siding-addr { font-size: 11px; color: var(--ink-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .ds-siding-x { color: var(--ink-dim); font-size: 16px; line-height: 1; padding: 4px; } .ds-siding-x:hover { color: var(--scarlet); }"
+    },
+    {
+      "name": "Search Input",
+      "kind": "input",
+      "refersTo": "station-flexible",
+      "description": "The tray's place-search field — enamel fill, hairline border, cobalt on focus.",
+      "html": "<input class=\"ds-input\" type=\"text\" placeholder=\"Find a place or paste an address\">",
+      "css": ".ds-input { width: 100%; padding: 8px 12px; background: var(--enamel); border: 1px solid var(--hairline); border-radius: 5px; color: var(--ink); font-family: Archivo, sans-serif; font-size: 13px; transition: border-color 120ms cubic-bezier(.2,.7,.3,1); } .ds-input::placeholder { color: var(--ink-dim); } .ds-input:focus { border-color: var(--cobalt); outline: none; }"
+    },
+    {
+      "name": "Day Nav",
+      "kind": "nav",
+      "refersTo": "station-fixed",
+      "description": "The rail's day navigation — a three-cell hairline grid with a centred date, rounded and clipped at --radius-chrome as one pill.",
+      "html": "<nav class=\"ds-daynav\"><button class=\"ds-daynav-btn\">&#8249;</button><button class=\"ds-daynav-date\">FRI, SEP 4</button><button class=\"ds-daynav-btn\">&#8250;</button></nav>",
+      "css": ".ds-daynav { display: grid; grid-template-columns: 34px 1fr 34px; align-items: stretch; border: 1px solid var(--hairline); border-radius: 5px; overflow: hidden; font-family: Archivo, sans-serif; } .ds-daynav-btn { background: none; border: 0; color: var(--ink-mid); font-size: 19px; font-weight: 400; line-height: 1; cursor: pointer; transition: background 120ms cubic-bezier(.2,.7,.3,1), color 120ms cubic-bezier(.2,.7,.3,1); } .ds-daynav-btn:hover { background: var(--hairline); color: var(--porcelain); } .ds-daynav-date { font-family: 'Archivo Narrow', Archivo, sans-serif; font-weight: 700; font-size: 13px; letter-spacing: .1em; text-transform: uppercase; padding: 8px 4px; border-left: 1px solid var(--hairline); border-right: 1px solid var(--hairline); color: var(--porcelain); background: none; cursor: default; }"
+    },
+    {
+      "name": "The Line — Track Segment",
+      "kind": "custom",
+      "refersTo": "station-fixed",
+      "description": "The system's signature component: a fixed station (porcelain ring) and a flexible station (cobalt ring + filled core) joined by a scarlet-on-navy track, each tick joined to its label by a connector line, with a neutral ink-dim drive-leg tag at the midpoint. Read straight out of schedule.js's _draw() geometry — never amber, because a routine leg is never the won't-fit state. (At rest; the real Line also scales a hot station's ring ×1.34 and its dot from r:2 to r:2.8, and thickens/recolours the connector to the station's own ink, which a static snippet can't reproduce.)",
+      "html": "<svg class=\"ds-line-demo\" viewBox=\"0 0 220 160\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M 30 16 L 30 144\" stroke=\"var(--enamel-sink)\" stroke-width=\"8\" fill=\"none\" stroke-linecap=\"round\"/><path d=\"M 30 16 L 30 144\" stroke=\"var(--scarlet)\" stroke-width=\"4\" fill=\"none\" stroke-linecap=\"round\"/><rect x=\"25\" y=\"73\" width=\"10\" height=\"14\" fill=\"var(--enamel)\"/><circle cx=\"30\" cy=\"80\" r=\"2.5\" fill=\"var(--ink-dim)\"/><text x=\"38\" y=\"83.5\" fill=\"var(--ink-mid)\" font-size=\"9.5\" font-family=\"Archivo, sans-serif\" letter-spacing=\".08em\" font-weight=\"600\">7 min</text><line x1=\"37.5\" y1=\"16\" x2=\"46\" y2=\"16\" stroke=\"var(--connector)\" stroke-width=\"1\"/><line x1=\"35\" y1=\"144\" x2=\"46\" y2=\"144\" stroke=\"var(--connector)\" stroke-width=\"1\"/><circle cx=\"30\" cy=\"16\" r=\"7.5\" fill=\"var(--enamel)\" stroke=\"var(--porcelain)\" stroke-width=\"3\"/><circle cx=\"30\" cy=\"144\" r=\"5\" fill=\"var(--enamel)\" stroke=\"var(--cobalt)\" stroke-width=\"3\"/><circle cx=\"30\" cy=\"144\" r=\"2\" fill=\"var(--cobalt)\"/><text x=\"46\" y=\"20\" fill=\"var(--porcelain)\" font-size=\"13\" font-weight=\"600\" font-family=\"Archivo, sans-serif\">Dentist — Dr. Nguyen</text><text x=\"46\" y=\"148\" fill=\"var(--porcelain)\" font-size=\"13\" font-weight=\"600\" font-family=\"Archivo, sans-serif\">Costco Pentagon City</text></svg>",
+      "css": ".ds-line-demo { background: var(--enamel); display: block; width: 220px; height: 160px; }"
+    },
+    {
+      "name": "Maps Handoff",
+      "kind": "custom",
+      "refersTo": "button-line",
+      "description": "One button replacing the old two-button 'Copy Maps link' / 'Open' pair. It toggles rather than offering two actions: default state copies the link; after a successful copy it relabels to 'Open' and fills solid cobalt (.is-ready); a sequence change (not a same-order time-only drag) reverts it automatically.",
+      "html": "<div style=\"display:flex; gap:12px;\"><button class=\"ds-btn ds-btn-line ds-btn-wide\">Copy Maps link</button><button class=\"ds-btn ds-btn-line ds-btn-wide is-ready\">Open</button></div>",
+      "css": ".ds-btn-wide { width: 100%; } .ds-btn-line.is-ready { background: var(--cobalt); color: var(--porcelain); } .ds-btn-line.is-ready:hover { background: #3D6EFF; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Midnight Line",
+    "overview": "dayroute refuses the arrangement every trip planner ships — itinerary cards beside a map panel — because that arrangement hides the one fact the product exists to surface: where the driving costs you time. Instead the schedule *is* the diagram. A vertical time axis (The Line) places each stop at its real clock position, so the empty space between two stations is drawn to scale and IS the drive leg, not a caption about it. The whole system reads as a fired-enamel metropolitan transit map: one midnight-blue material lit by three saturated inks that carry state, everything else rendered in hairline navy and tabular figures.\n\nThis is a bolder-register world chosen from Impeccable's direction round (seed `3faa1e80`, catalog id `wayfinding-cartography-signage-midnight-transit-diagram`), built in Operate mode along a code-led path — there is no image-generation step in this harness, so no approved visual comp exists upstream of the CSS and JS themselves; the code *is* the design record. Even the favicon is a miniature Line: a scarlet route with two porcelain interchange dots on an enamel ground.\n\nConfirmed rejections, all visible in the shipped code: no shadow anywhere except one load-bearing exception (a pinned map pin's concentric ring, built from `box-shadow` because MapLibre markers have no native double-ring), no gradient (the ground texture is an SVG hairline mesh, not a gradient), and no stock basemap tile set (OpenFreeMap's `dark` style is recoloured at load into the same enamel ramp the interface uses). Radius is no longer an absolute rejection: after the user reported the surface as \"harshly square\" and \"stiff and boxy\" three times running, a structured question resolved it into a considered split (see Shapes) rather than a reversal of the whole no-shadow/no-gradient/no-stock-tile stance, which stayed intact.",
+    "keyCharacteristics": [
+      "One material (fired enamel, four tonal steps — sink, ground, raise, hover), separated by hairlines, never by shadow.",
+      "Exactly three state inks on the diagram (porcelain / cobalt / amber); amber doubles as the system's general attention ink in chrome (the map's now-line, advisories, the busy status dot) but narrows to won't-fit alone the instant it lands on a station or a pin. Green is confirmation-only chrome and never touches the Line or the map.",
+      "Archivo Narrow for every number and every signage-style caps label; Archivo for reading text.",
+      "All figures that count something are tabular and right-set: totals, sequence numbers, leg minutes.",
+      "Depth is tonal (four enamel steps), not cast — flat by material, not flat by accident.",
+      "Radius is split, not absolute: tool chrome rounds at --radius-chrome (5px, a deliberate, user-chosen reversal of the system's original zero-radius stance); the diagram itself stays exactly 0, with circles as its only curve.",
+      "The type scale is eight named roles (micro/ui-text/sub-head/compact-stat/wordmark/secondary-lead/mobile-lead/primary-lead, 11-39px on a ~x1.2 progression), rebuilt wholesale -- along with a real 4px spacing grid and three line-height roles -- after the prior per-component values were confirmed by audit to not add up to a system.",
+      "A station on the Line is a tick with a label beside it, not a card — the event shell is transparent and borderless at rest, and a hover/selection surface only appears behind the tick, connector, and label together, so they read as one object.",
+      "Motion splits cleanly by role: ordinary state change runs on --t-fast/--t-base with the system's original ease; anything that travels — a reorder, a count-up, a route drawing itself on — runs on --t-move/--ease-out. The system permits exactly one ambient loop (the busy status dot); a second one was tried on the now-line and rejected.",
+      "The basemap is not a stock tile: its colours are re-derived from the source style's own luminance into the interface's ramp."
+    ],
+    "rules": [
+      { "name": "The Three Inks Rule", "body": "Exactly three colours carry state on the diagram itself: porcelain (fixed), cobalt (flexible), amber (won't-fit). No fourth state colour is introduced on the Line or a map pin.", "section": "colors" },
+      { "name": "The Chrome-Only Green Rule", "body": "Green never appears on the Line or the map. It is confirmation chrome exclusively — the ready-status dot and the saved-time delta.", "section": "colors" },
+      { "name": "The Contrast-Floor Rule", "body": "`--ink-dim` is `#7C8AAC` specifically because it clears 5.05:1 on `--enamel-raise` — the floor for the system's smallest functional text (11px). The primary hover `#C4121F` is specified the same way, for 6.14:1 against white.", "section": "colors" },
+      { "name": "The Attention-Ink Rule", "body": "Outside the diagram, amber is the system's general attention ink: the map's now-line (a static amber dot — a pulsing version was tried and rejected in the finish pass for competing with the Line's own focal moments), the rail-note advisory, the warn toast, the busy status dot, and the stop sheet's failed-geocode note (`.field-note[data-state=\"bad\"]`) all reach for it to mean \"look here.\" The instant amber lands on a station or a map pin, though, it narrows to exactly one meaning — won't-fit — and nothing else on the diagram is ever coloured amber for a routine reason. This is what keeps the Three Inks Rule true at the diagram level while amber stays useful everywhere else.", "section": "colors" },
+      { "name": "The Named-Role Scale Rule", "body": "Every font size is one of the eight `--fs-` tokens, and every token is documented by role, not just by number. A new component reaches for a role — never a bare pixel value, and never a ninth size.", "section": "typography" },
+      { "name": "The Weight Carries Hierarchy Rule", "body": "400/600/700 mean reading text / interactive text / a leading figure-or-brand-or-badge, consistently, everywhere except three named exceptions (`.daynav-btn` stays 400 despite its size, `.daynav-date` stays 700 as the control's primary identifier, `.pane-title`/`.sheet-title` are headings deliberately downgraded to 600). A font-weight that doesn't fit one of those meanings is a sign the text has drifted outside the system, not a new pattern to extend.", "section": "typography" },
+      { "name": "The Three Line-Heights Rule", "body": "`--lh-tight`/`--lh-label`/`--lh-read` are the complete set. The two bare-literal exceptions (the paste textarea's `1.7`, the delete glyph's `1`) are single-purpose optical fixes, not a fourth role to reach for elsewhere.", "section": "typography" },
+      { "name": "The 4px-Grid Rule", "body": "Every meaningful gap, padding, and margin in the system is one of the seven `--space-` steps (or the `--pad`/`--gap` aliases onto them). A sub-4px bare literal is reserved for optical nudges that aren't rhythm — not an escape hatch for a value that doesn't fit the grid.", "section": "layout" },
+      { "name": "The One-Screen Rule", "body": "Desktop never scrolls the page. A 100dvh grid with `overflow: hidden` on `body` keeps the whole day composed on one screen; only the panes scroll internally.", "section": "layout" },
+      { "name": "The Read-Only Overlay Rule", "body": "The Line's SVG track is absolutely positioned over FullCalendar's real grid and only ever reads geometry (`getBoundingClientRect`) off the rendered DOM — it never sets `position` on `.fc-v-event` or `info.el`, because FullCalendar sizes events by absolute top/bottom to keep them proportional to duration, and overriding that makes an event grow to fit its text instead of its time span.", "section": "layout" },
+      { "name": "The Flat-By-Material Rule", "body": "Depth is tonal, not cast. A surface is \"above\" another because it is a lighter step of the same enamel plus a hairline border — never a shadow, never a blur.", "section": "elevation" },
+      { "name": "Chrome Radius, Diagram Stays Sharp", "body": "Tool chrome (buttons, inputs, dialogs, toasts, the siding tray, the map's zoom control) rounds at `--radius-chrome` (5px). The diagram — the Line's stations, the map's route and track rendering — stays exactly `0`, with circles as its only curve. A new component reaching for a radius asks first which side of that line it's on; there is no third value.", "section": "shapes" }
+    ],
+    "dos": [
+      "Do keep colour concentrated on the Line and the route. Scarlet, cobalt, and amber only mean something when they appear on the diagram or the map — everywhere else, reach for the neutral ramp.",
+      "Do treat `--ink-dim` (`#7C8AAC`) and the primary hover `#C4121F` as contrast-derived values, not stylistic choices — 5.05:1 and 6.14:1 respectively are the floor, not a target to loosen.",
+      "Do round tool chrome at --radius-chrome (5px) and keep the diagram -- the Line's stations, the map's route/track -- at exactly 0 with circles as its only curve. This is a considered, user-chosen split, not the absolute zero-radius rule this document used to record.",
+      "Do reach for one of the eight named --fs- roles (micro/ui-text/sub-head/compact-stat/wordmark/secondary-lead/mobile-lead/primary-lead) and one of the three --lh- line-heights, never a bare pixel value. If a new component seems to need a size or line-height the scale doesn't have, that's a signal to reuse the nearest role, not add one.",
+      "Do draw every gap, padding, and margin from --space-1 through --space-7 (or the --pad/--gap aliases). A one-off pixel value here is exactly the pattern the user reacted to when this document still said padding was set locally per component.",
+      "Do read geometry off FullCalendar's DOM in the Line overlay; never write `position` back onto `.fc-v-event` or `info.el`.",
+      "Do run ordinary state change (hover, focus, colour, background) on `--t-fast` (120ms) or `--t-base` (220ms) with the system's original ease, `cubic-bezier(.2, .7, .3, 1)`. Reach for `--t-move` (440ms) and `--ease-out` (`cubic-bezier(.16, 1, .3, 1)`) only for something that travels — a reorder, a count-up, a route drawing itself on. The two curves are never swapped.",
+      "Do use amber freely in chrome for anything that genuinely needs attention — advisories, warnings, the now-line, busy status, a failed form field. The moment amber touches a station or a map pin, though, hold it to exactly one meaning: won't-fit.",
+      "Do keep the tick, connector, and label of a station acting as one object. If a future change gives any one of them its own independent hover/selection treatment, check it against `LABEL_INSET`/`margin-left` first — that's the coupling that keeps them aligned."
+    ],
+    "donts": [
+      "Don't add a coloured left-edge accent to a card or container. It was built into five components during development and removed in the finish pass — it is an anti-pattern here, not an available style.",
+      "Don't add a shadow or a gradient anywhere. The one `box-shadow` in the system (a pinned map pin's double ring) exists because MapLibre markers can't fake a concentric ring with a border; it is not precedent for adding shadows elsewhere. Depth comes from the four enamel steps and a hairline, never from either.",
+      "Don't let amber mark a routine drive leg or a routine (non-unfit) station/pin state — that collision shipped once (an active map pin rendered identically to a won't-fit pin) and was fixed by moving the active state to cobalt. Amber's reach into general chrome attention-getting stops the moment it touches the diagram.",
+      "Don't rely on a bare `display` rule to hide something the app also sets `[hidden]` on — `[hidden] { display: none !important; }` in the reset is what makes every `.hidden`/`hidden`-attribute toggle in the system actually work (the delta panel, the search-results dropdown, the Maps-limit note, the map's loading scrim). A component-level `display: flex` on a hideable element silently defeats it.",
+      "Don't invent a fourth state ink for the Line or the map. Porcelain, cobalt, and amber are the complete set; a new state should reuse one of the three or be represented by shape/style (as the no-geocode text tint already does) rather than by colour.",
+      "Don't add a second ambient, looping animation. The busy status dot is the system's one permitted loop; an infinitely pulsing dot on the now-indicator was built, flagged by the detector as decoration competing with the Line's own focal moments, and removed. A static amber dot is the answer there, not a second lamp.",
+      "Don't give a station its own background/border card again. The tick-connector-label unit and its shared `::before` hover surface are what replaced the boxed event — reintroducing a per-state border would fight the connector for the eye's attention and undo the point of the de-boxing.",
+      "Don't round the diagram, and don't leave a new piece of tool chrome unrounded. --radius-chrome is a considered, user-chosen split, not a suggestion either side can drift across -- a rounded station or a hard-cornered dialog are both drift, not variety.",
+      "Don't reintroduce a bare pixel font size, weight, or line-height outside the documented roles. The prior scale's failure mode was exactly this: one-off values accumulating component by component until \"doesn't make sense\" was the honest description."
+    ]
+  }
+}
