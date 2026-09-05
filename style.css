@@ -397,16 +397,20 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .
 /* A station, not a card. Ink block on the left edge, porcelain label. */
 .fc .fc-timegrid-event,
 .fc .fc-v-event {
-  background: transparent;
-  border: 0;
+  background: var(--enamel-raise);
+  border: var(--hair) solid var(--hairline);
   border-radius: 0;
   box-shadow: none;
   padding: 0;
   margin-left: 34px;
   min-width: 0;
-  transition: background var(--t-fast) var(--ease), transform var(--t-fast) var(--ease-out);
+  transition: background var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease), transform var(--t-fast) var(--ease-out);
 }
-/* The label sits on the enamel; a surface appears only when you touch it. */
+/* The connector still reaches back to the track (schedule.js's _draw()), so
+   the tick-connector-label-box still reads as one continuous object — the
+   box just now has a real surface at rest instead of only revealing one on
+   hover, which was the actual comprehension problem: an event with no
+   background at all is indistinguishable from an empty grid row. */
 .fc .fc-v-event::before {
   content: "";
   position: absolute;
@@ -416,13 +420,13 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .
   transition: opacity var(--t-fast) var(--ease);
   pointer-events: none;
 }
-.fc .fc-v-event:hover::before { opacity: .62; }
-.fc .fc-v-event.is-selected::before { opacity: .9; }
+.fc .fc-v-event:hover::before { opacity: .85; }
+.fc .fc-v-event.is-selected::before { opacity: 1; }
 /* A batch selection (cmd/ctrl-click, shift-click range) marks membership with
    a ring rather than the hover wash above — it has to stay visible while the
    pointer is elsewhere, since that's the whole point of selecting several. */
 .fc .fc-v-event.is-multiselected { outline: 1.5px solid var(--cobalt-ink); outline-offset: -1.5px; }
-.fc .fc-v-event:hover { background: var(--enamel-hover); border-color: var(--ink-dim); }
+.fc .fc-v-event:hover { border-color: var(--ink-mid); }
 
 .fc .fc-v-event.is-unfit .ev-name { color: var(--amber); }
 .fc .fc-v-event.is-nogeo .ev-name { color: var(--ink-mid); }
@@ -454,7 +458,7 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .
   flex: none; min-width: 13px;
 }
 .ev-name {
-  font-weight: 600; font-size: var(--fs-2); line-height: var(--lh-label);
+  font-weight: 700; font-size: var(--fs-3); line-height: var(--lh-label);
   color: var(--porcelain);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   /* The name is what identifies the stop; it must survive before anything

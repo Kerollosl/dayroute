@@ -418,7 +418,14 @@ export class Schedule {
     const colLeft = probe
       ? probe.getBoundingClientRect().left - box.left
       : (label ? label.getBoundingClientRect().width : 44);
-    const TRACK_X = Math.max(20, colLeft) + TRACK_GUTTER;
+    // The nominal column boundary isn't enough on its own: the axis text
+    // (fc-timegrid-slot-label-cushion) can render wider than its own reserved
+    // column at the current font size and overflow past it — measured, not
+    // assumed, after the track was found sitting 4.5px inside "7am"'s own
+    // rendered text. Clear whichever edge is actually further right.
+    const axisText = this.els.calendar.querySelector('.fc-timegrid-slot-label-cushion');
+    const axisRight = axisText ? axisText.getBoundingClientRect().right - box.left : 0;
+    const TRACK_X = Math.max(20, colLeft, axisRight) + TRACK_GUTTER;
 
     const nodes = [...this.els.calendar.querySelectorAll('.fc-timegrid-event-harness')];
     const stations = nodes.map((n) => {
