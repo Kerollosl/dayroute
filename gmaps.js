@@ -1,13 +1,11 @@
 // gmaps.js — the handoff out of the product.
 //
-// Google's consumer directions URL takes at most 9 waypoints, so 11 stops per
-// link (origin + 9 + destination). Mobile browsers honour only 3 — and mobile
-// is exactly where this link gets opened. Neither ceiling is hidden: a long day
-// splits into chained legs, and the mobile limit is stated where it applies.
+// Phone browsers support only 3 waypoints. Use that ceiling everywhere so a
+// copied link keeps every stop even when it opens on a different device.
 
 export const MAX_WAYPOINTS = 9;
-export const STOPS_PER_LINK = MAX_WAYPOINTS + 2;
 export const MOBILE_WAYPOINTS = 3;
+export const STOPS_PER_LINK = MOBILE_WAYPOINTS + 2;
 
 const pt = (s) => `${s.lat.toFixed(6)},${s.lng.toFixed(6)}`;
 
@@ -19,7 +17,13 @@ const pt = (s) => `${s.lat.toFixed(6)},${s.lng.toFixed(6)}`;
  */
 export function buildLinks(stops) {
   const pts = stops.filter((s) => Number.isFinite(s.lat) && Number.isFinite(s.lng));
-  if (pts.length < 2) return [];
+  if (!pts.length) return [];
+  if (pts.length === 1) {
+    const destination = pts[0];
+    const q = new URLSearchParams({ api: '1', travelmode: 'driving', destination: pt(destination) });
+    return [{ url: `https://www.google.com/maps/dir/?${q}`, from: 'Your location',
+      to: destination.name || destination.address, count: 1 }];
+  }
 
   const links = [];
   for (let i = 0; i < pts.length - 1; i += STOPS_PER_LINK - 1) {
@@ -42,13 +46,10 @@ export function buildLinks(stops) {
 
 /** What to tell the user about the ceilings, or null when nothing applies. */
 export function linkCaveat(stops, links) {
-  const n = stops.filter((s) => Number.isFinite(s.lat)).length;
+  const n = stops.filter((s) => Number.isFinite(s.lat) && Number.isFinite(s.lng)).length;
   if (n < 2) return null;
   if (links.length > 1) {
-    return `${n} stops exceeds Google's 9-waypoint limit, so this is split into ${links.length} legs. Each starts where the last ended.`;
-  }
-  if (n - 2 > MOBILE_WAYPOINTS) {
-    return `Opened in a phone browser, Google honours only ${MOBILE_WAYPOINTS} waypoints. The Google Maps app takes all ${n - 2}.`;
+    return `${n} locations split into ${links.length} legs so every stop works on your phone. Each starts where the last ended.`;
   }
   return null;
 }

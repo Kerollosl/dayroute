@@ -98,8 +98,9 @@ export class Store extends EventTarget {
   save() {
     try {
       localStorage.setItem(KEY, JSON.stringify(this.state));
+      this.saveFailed = false;
     } catch {
-      /* private mode, quota, blocked site data — the app still works this session */
+      this.saveFailed = true;
     }
   }
 
@@ -195,8 +196,15 @@ export class Store extends EventTarget {
       .map((s) => ({ id: s.id, a: toMin(s.start), b: toMin(s.start) + Math.max(0, s.dwell || 0) }))
       .sort((x, y) => x.a - y.a);
     const bad = new Set();
-    for (let i = 1; i < pinned.length; i++) {
-      if (pinned[i].a < pinned[i - 1].b - 0.5) { bad.add(pinned[i].id); bad.add(pinned[i - 1].id); }
+    let active = [];
+    for (const current of pinned) {
+      active = active.filter((other) => current.a < other.b - 0.5);
+      if (current.b <= current.a) continue;
+      for (const other of active) {
+        bad.add(current.id);
+        bad.add(other.id);
+      }
+      active.push(current);
     }
     return bad;
   }

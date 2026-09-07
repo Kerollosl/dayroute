@@ -11,6 +11,15 @@
 
 const SYS_FONT = '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif';
 import { toHM, toMin, fmtDur, fmtLeg } from './store.js';
+import { DAY_END_MIN } from './route.js';
+
+/** Minutes -> "9:00", "1:45pm". Matches the grid axis's own 12-hour voice. */
+const hhmm = (min) => {
+  const m = ((Math.round(min) % 1440) + 1440) % 1440;
+  const h = Math.floor(m / 60), mm = String(m % 60).padStart(2, '0');
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return `${h12}:${mm}${h < 12 ? 'am' : 'pm'}`;
+};
 
 const TRACK_GUTTER = 18;   // distance from the start of the event column
 const LABEL_INSET  = 30;   // where the label begins; matches .fc-v-event margin-left
@@ -24,10 +33,12 @@ const el = (n, attrs = {}) => {
 };
 
 export class Schedule {
-  constructor({ store, els, onEditStop, onHoverStop, onChange, driveSecondsBetween, toast }) {
+  constructor({ store, els, onEditStop, onCreateStop, onHoverStop, onChange, onResolveConflict, driveSecondsBetween, toast }) {
     this.store = store;
     this.els = els;
+    this.onResolveConflict = onResolveConflict;
     this.onEditStop = onEditStop;
+    this.onCreateStop = onCreateStop;
     this.onHoverStop = onHoverStop;
     this.driveSecondsBetween = driveSecondsBetween || (() => null);
     this.onChange = onChange;
@@ -124,6 +135,13 @@ export class Schedule {
         // A data attribute only. Never touch info.el.style.position — FC sizes
         // events by absolute top/bottom and overriding it breaks duration.
         info.el.dataset.stopId = info.event.extendedProps.stopId || '';
+        // A keyboard nudge writes to the store, which re-renders and destroys
+        // the focused node. Without this the first arrow key throws focus to
+        // the body and the second does nothing at all.
+        if (self._refocusId && info.el.dataset.stopId === self._refocusId) {
+          self._refocusId = null;
+          requestAnimationFrame(() => info.el.focus());
+        }
       },
 
       eventDrop: (info) => self._commitMove(info, info.jsEvent),
@@ -155,6 +173,10 @@ export class Schedule {
         const id = info.event.extendedProps.stopId;
         const e = info.jsEvent;
 
+        // The conflict badge is an action, not part of the card's click target.
+        const resolver = e?.target?.closest?.('[data-resolve]');
+        if (resolver) { self.onResolveConflict?.(resolver.dataset.resolve); return; }
+
         if (e.shiftKey && self._selectAnchor) {
           self._rangeSelect(self._selectAnchor, id);
           return;
@@ -181,13 +203,13 @@ export class Schedule {
       // Click an empty slot to create a stop right there.
       select: (info) => {
         const mins = Math.max(15, Math.round((info.end - info.start) / 60000));
-        const stop = self.store.add({
-          name: '', address: '', day: self.store.day,
+        const draft = {
+          day: self.store.day,
           start: toHM(info.start.getHours() * 60 + info.start.getMinutes()),
           dwell: mins,
-        });
+        };
         self.cal.unselect();
-        self.onEditStop?.(stop.id, { isNew: true });
+        self.onCreateStop?.(draft);
       },
 
       datesSet: () => self.scheduleDraw(),
@@ -214,6 +236,28 @@ export class Schedule {
     };
     this._applyHeight();
     this._mq.addEventListener('change', this._applyHeight);
+
+    // PRODUCT.md commits to "full keyboard operation of the schedule", but
+    // schedule.js held no key handler at all: an event could be focused and
+    // opened, never MOVED. Drag was the only way to change a stop's time, which
+    // left the product's central object unreachable without a pointer.
+    // Arrow keys nudge in 15-minute steps, Shift for 5, matching the grid's own
+    // half-hour rules. The store is the single source of truth, so this writes
+    // through it exactly as a drag does and inherits undo for free.
+    this.els.calendar.addEventListener('keydown', (e) => {
+      if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+      const node = e.target.closest?.('.fc-event');
+      if (!node) return;
+      const id = node.getAttribute('data-stop-id');
+      const st = id && this.store.byId(id);
+      if (!st || !st.start) return;
+      e.preventDefault();
+      const step = (e.shiftKey ? 5 : 15) * (e.key === 'ArrowUp' ? -1 : 1);
+      const next = Math.min(DAY_END_MIN - 5, Math.max(0, toMin(st.start) + step));
+      this.store.update(id, { start: toHM(next) });
+      // The store re-render mints a new node; put focus back on the same stop.
+      this._refocusId = id;
+    });
 
     const scroller = this.els.calendar.querySelector('.fc-scroller');
     scroller?.addEventListener('scroll', () => this.scheduleDraw(), { passive: true });
@@ -410,21 +454,33 @@ export class Schedule {
     // A conflict only ever happens between pinned stops, so "Conflict" already
     // says "Fixed" — showing both wastes exactly the width a squeezed
     // side-by-side column has the least of.
-    if (s?.pinned && !inConflict) {
+    const hasFault = inConflict || this.plan?.unfitIds?.has(s?.id);
+    if (s?.pinned && !hasFault) {
       const b = document.createElement('span');
       b.className = 'ev-badge ev-badge--pin';
       b.textContent = 'Fixed';
       top.appendChild(b);
     }
     if (inConflict) {
-      const b = document.createElement('span');
-      b.className = 'ev-badge ev-badge--unfit';
+      // Naming a collision without offering a way out leaves the reader to
+      // drag two pinned appointments apart by hand at the exact moment the
+      // grid is drawing them as two crushed half-width columns. The badge is
+      // the resolution: it moves this stop to when the one it overlaps ends.
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'ev-badge ev-badge--unfit ev-badge--action';
+      b.dataset.resolve = s.id;
       b.textContent = 'Conflict';
+      b.title = 'Move this stop to when the one it overlaps ends';
+      b.setAttribute('aria-label', `Resolve conflict: move ${s.name || s.address} to after the stop it overlaps`);
       top.appendChild(b);
     } else if (this.plan?.unfitIds?.has(s?.id)) {
       const b = document.createElement('span');
       b.className = 'ev-badge ev-badge--unfit';
-      b.textContent = "Won't fit";
+      // Two different faults wore one word. Optimize EXCLUDES a stop it cannot
+      // place; an infeasible hand-built day still visits the stop, just late.
+      // "Won't fit" for the first is accurate, for the second it is not.
+      b.textContent = this.plan?.lateId === s?.id ? 'Runs late' : "Won't fit";
       top.appendChild(b);
     }
 
@@ -442,6 +498,18 @@ export class Schedule {
 
     const meta = document.createElement('div');
     meta.className = 'ev-meta';
+
+    // Arrive-depart. The grid position encodes this, but reading it means
+    // tracking left to the axis and interpolating between half-hour rules —
+    // on a phone, while scrolling. The card owns the space; state the number.
+    if (s?.start) {
+      const from = toMin(s.start);
+      const w = document.createElement('span');
+      w.className = 'ev-when';
+      w.textContent = `${hhmm(from)} – ${hhmm(from + Math.max(0, s.dwell ?? 30))}`;
+      meta.appendChild(w);
+    }
+
     const rest = s?.geoStatus === 'fail' ? 'no location'
       : s?.geoStatus === 'none' ? 'locating…'
       : s?.address || '';

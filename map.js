@@ -220,6 +220,9 @@ export class RouteMap {
       seq += 1;
       el.className = 'pin' + (s.pinned ? ' is-pinned' : '') + (s.unfit ? ' is-unfit' : '') + (s.conflict ? ' is-conflict' : '') + (s.id === activeId ? ' is-active' : '');
       el.dataset.stopId = s.id;
+      el.tabIndex = 0;
+      el.setAttribute('role', 'button');
+      el.setAttribute('aria-label', `Edit stop ${seq}: ${s.name || s.address}`);
       // A real pin: a station badge on a stem that points at the actual
       // coordinate, echoing the Line's own ring language (white fill, state
       // ink as the ring) so the map and the diagram read as one system.
@@ -234,6 +237,11 @@ export class RouteMap {
       name.textContent = s.name || s.address || '';
       el.append(name, tick, stem);
       el.addEventListener('click', (e) => { e.stopPropagation(); this.onPinClick?.(s.id); });
+      el.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault(); e.stopPropagation(); this.onPinClick?.(s.id);
+        }
+      });
       this.markers.push(new maplibregl.Marker({ element: el, anchor: 'bottom' }).setLngLat([s.lng, s.lat]).addTo(this.map));
     });
   }
@@ -288,6 +296,10 @@ export class RouteMap {
   fit(stops) {
     const pts = stops.filter((s) => Number.isFinite(s.lat) && Number.isFinite(s.lng));
     if (!this.map || !pts.length) return;
+    // Phone view switching can hide the map. Fitting into a zero-sized canvas
+    // produces an invalid camera; wait until the map becomes visible.
+    if (!this.el.clientWidth || !this.el.clientHeight) { this._pendingFit = pts; return; }
+    this._pendingFit = null;
     if (pts.length === 1) { this.map.easeTo({ center: [pts[0].lng, pts[0].lat], zoom: 12.5, duration: 500 }); return; }
     const b = new maplibregl.LngLatBounds();
     for (const p of pts) b.extend([p.lng, p.lat]);
@@ -307,5 +319,9 @@ export class RouteMap {
     this.map.easeTo({ center: [stop.lng, stop.lat], zoom: Math.max(this.map.getZoom(), 13), duration: 500 });
   }
 
-  resize() { this.map?.resize(); }
+  resize() {
+    if (!this.el.clientWidth || !this.el.clientHeight) return;
+    this.map?.resize();
+    if (this._pendingFit) this.fit(this._pendingFit);
+  }
 }

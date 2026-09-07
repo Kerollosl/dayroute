@@ -55,14 +55,16 @@ export function parseList(text) {
 }
 
 export class Tray {
-  constructor({ store, els, onChange, onFocusStop, onHoverStop, toast }) {
+  constructor({ store, els, onChange, onFocusStop, onHoverStop, onPlaceStop, toast }) {
     this.store = store;
     this.els = els;
     this.onChange = onChange;
     this.onFocusStop = onFocusStop;
+    this.onPlaceStop = onPlaceStop;
     this.onHoverStop = onHoverStop;
     this.toast = toast;
     this.hits = [];
+    this.cursor = -1;
     this.searchAbort = null;
     this.mapCenter = null;
     this._wire();
@@ -74,13 +76,23 @@ export class Tray {
     let t = null;
     searchInput.addEventListener('input', () => {
       clearTimeout(t);
+      this.searchAbort?.abort();
+      this._renderHits([]);
       const q = searchInput.value.trim();
       if (q.length < 3) { this._renderHits([]); return; }
       t = setTimeout(() => this._search(q), 320);
     });
     searchInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') { this._renderHits([]); searchInput.blur(); }
-      if (e.key === 'Enter' && this.hits.length) { e.preventDefault(); this._take(this.hits[0]); }
+      if (e.key === 'Escape') { clearTimeout(t); this.searchAbort?.abort(); this._renderHits([]); searchInput.blur(); }
+      if (['ArrowDown', 'ArrowUp'].includes(e.key) && this.hits.length) {
+        e.preventDefault();
+        this.cursor = (this.cursor + (e.key === 'ArrowDown' ? 1 : -1) + this.hits.length) % this.hits.length;
+        [...searchResults.children].forEach((b, i) => {
+          b.classList.toggle('is-highlighted', i === this.cursor);
+          if (i === this.cursor) b.scrollIntoView({ block: 'nearest' });
+        });
+      }
+      if (e.key === 'Enter' && this.hits.length) { e.preventDefault(); this._take(this.hits[Math.max(0, this.cursor)]); }
     });
     document.addEventListener('click', (e) => {
       if (!searchResults.contains(e.target) && e.target !== searchInput) this._renderHits([]);
@@ -107,6 +119,8 @@ export class Tray {
     trayList.addEventListener('click', (e) => {
       const del = e.target.closest('[data-del]');
       if (del) { this.store.remove(del.dataset.del); return; }
+      const place = e.target.closest('[data-place]');
+      if (place) { this.onPlaceStop?.(place.dataset.place); return; }
       const row = e.target.closest('[data-id]');
       if (row) this.onFocusStop?.(row.dataset.id);
     });
@@ -117,14 +131,28 @@ export class Tray {
   async _search(q) {
     this.searchAbort?.abort();
     this.searchAbort = new AbortController();
+    const signal = this.searchAbort.signal;
+    this._searchMessage('Searching…');
     try {
-      const hits = await geo.search(q, { near: this.mapCenter, signal: this.searchAbort.signal });
+      const hits = await geo.search(q, { near: this.mapCenter, signal });
+      if (signal.aborted || this.els.searchInput.value.trim() !== q) return;
       this._renderHits(hits);
+      if (!hits.length) this._searchMessage('No results. Try a city or street address, or use Add manually.');
     } catch { /* superseded by a newer keystroke */ }
+  }
+
+  _searchMessage(text) {
+    const p = document.createElement('p');
+    p.className = 'search-message';
+    p.setAttribute('role', 'status');
+    p.textContent = text;
+    this.els.searchResults.replaceChildren(p);
+    this.els.searchResults.hidden = false;
   }
 
   _renderHits(hits) {
     this.hits = hits;
+    this.cursor = -1;
     const box = this.els.searchResults;
     box.textContent = '';
     if (!hits.length) { box.hidden = true; return; }
@@ -157,8 +185,9 @@ export class Tray {
     if (!pending.length) return;
     let found = 0;
     for (const s of pending) {
-      const hit = await geo.resolve(s.address);
-      if (!this.store.byId(s.id)) continue;
+      const address = s.address;
+      const hit = await geo.resolve(address);
+      if (this.store.byId(s.id)?.address !== address) continue;
       if (hit) {
         found++;
         this.store.update(s.id, { lat: hit.lat, lng: hit.lng, geoStatus: 'ok' }, { checkpoint: false, silent: true });
@@ -183,7 +212,7 @@ export class Tray {
     if (!sidings.length) {
       const p = document.createElement('p');
       p.className = 'tray-empty';
-      p.textContent = 'Nothing here yet. Add a place above, or paste a list, then drag it onto the schedule.';
+      p.textContent = 'Search or paste places to save for later. Use + to fit one into your day, or open it to choose a time.';
       list.appendChild(p);
       return;
     }
@@ -195,17 +224,36 @@ export class Tray {
       row.setAttribute('data-event', JSON.stringify({ title: s.name || s.address, extendedProps: { stopId: s.id }, duration: { minutes: s.dwell || 30 } }));
 
       const tick = document.createElement('div'); tick.className = 'siding-tick';
-      const mid = document.createElement('div'); mid.style.minWidth = '0';
+      const mid = document.createElement('button'); mid.type = 'button'; mid.className = 'siding-edit';
+      mid.setAttribute('aria-label', `Edit ${s.name || s.address}`);
       const nm = document.createElement('div'); nm.className = 'siding-name'; nm.textContent = s.name || s.address; nm.title = s.name || s.address;
       const ad = document.createElement('div'); ad.className = 'siding-addr';
       ad.textContent = s.geoStatus === 'fail' ? 'Not found — click to edit' : (s.address || '');
       ad.title = ad.textContent;
       mid.append(nm, ad);
+      // The schedule already knows how much idle time the day has, and the tray
+      // already knows what is waiting for it — the two never met, so "78 min
+      // free" sat beside stops that would fit with no way to say so except a
+      // drag. This is that path, and being a button it also works from the
+      // keyboard, which dragging never did.
+      const add = document.createElement('button');
+      add.className = 'siding-add'; add.type = 'button'; add.dataset.place = s.id;
+      add.setAttribute('aria-label', `Schedule ${s.name || s.address} in the first free gap`);
+      add.title = 'Schedule in the first gap it fits';
+      add.innerHTML = '';
+      const ico = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      ico.setAttribute('viewBox', '0 0 16 16'); ico.setAttribute('aria-hidden', 'true');
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', 'M8 3.5v9M3.5 8h9');
+      path.setAttribute('stroke', 'currentColor'); path.setAttribute('stroke-width', '1.8');
+      path.setAttribute('stroke-linecap', 'round'); path.setAttribute('fill', 'none');
+      ico.appendChild(path); add.appendChild(ico);
+
       const x = document.createElement('button');
       x.className = 'siding-x'; x.type = 'button'; x.dataset.del = s.id;
       x.setAttribute('aria-label', `Remove ${s.name || s.address}`); x.textContent = '×';
 
-      row.append(tick, mid, x);
+      row.append(tick, mid, add, x);
       list.appendChild(row);
     }
   }

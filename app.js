@@ -22,7 +22,7 @@ const els = {
   delta: $('delta'), deltaFigure: $('deltaFigure'), deltaLabel: $('deltaLabel'),
   btnOptimize: $('btnOptimize'), btnUndo: $('btnUndo'),
   btnMapsAction: $('btnMapsAction'), btnMapsActionLabel: $('btnMapsActionLabel'), mapsNote: $('mapsNote'),
-  dayPrev: $('dayPrev'), dayNext: $('dayNext'), dayToday: $('dayToday'), dayLabel: $('dayLabel'),
+  dayPrev: $('dayPrev'), dayNext: $('dayNext'), dayToday: $('dayToday'), dayLabel: $('dayLabel'), dayPicker: $('dayPicker'),
   netStatus: $('netStatus'), netStatusText: $('netStatusText'),
   legend: $('legend'), toasts: $('toasts'), lineEmpty: $('lineEmpty'),
   btnOrigin: $('btnOrigin'), originValue: $('originValue'), originSheet: $('originSheet'),
@@ -32,6 +32,10 @@ const els = {
   stopSheet: $('stopSheet'), stopSheetTitle: $('stopSheetTitle'),
   stopName: $('stopName'), stopAddr: $('stopAddr'), stopDwell: $('stopDwell'),
   stopPinned: $('stopPinned'), stopDelete: $('stopDelete'), stopGeoNote: $('stopGeoNote'),
+  stopStart: $('stopStart'),
+  stopForm: $('stopForm'), stopDayHint: $('stopDayHint'),
+  btnAddStop: $('btnAddStop'), btnFirstStop: $('btnFirstStop'),
+  mapsSheet: $('mapsSheet'), mapsLegs: $('mapsLegs'), btnCopyLegs: $('btnCopyLegs'),
   mapScrim: $('mapScrim'),
 };
 
@@ -46,7 +50,11 @@ let lastMatrix = null;        // most recent driving matrix, for live drag const
 const linkSignature = (ls) => ls.map((l) => l.url).join('|');
 let lastDriveBefore = null;
 let editingId = null;
+let stopDraft = null;
 let geomToken = 0;
+let computeToken = 0;
+let dataRevision = 0;
+let optimizing = false;
 
 // -- chrome ----------------------------------------------------------------
 function toast(msg, kind = 'info') {
@@ -160,17 +168,23 @@ function dayWindow(mstops, m = null) {
   return { dayStart: Math.min(earliest, firstPinned.startMin - lead) };
 }
 
-function renderLegend() {
+/**
+ * A key for marks that are not on screen is noise — DESIGN.md states this, but
+ * the rule was only applied all-or-nothing at zero stops. A day of one flexible
+ * errand still advertised "Fixed" and "Won't fit", two of the three marks being
+ * for something not present. Each item now earns its place independently.
+ */
+function renderLegend({ fixed = false, flexible = false, fault = false } = {}) {
   els.legend.textContent = '';
   // Read straight from the stylesheet so the legend can never drift from the
   // inks the diagram actually draws with.
   const cs = getComputedStyle(document.documentElement);
   const v = (n, f) => cs.getPropertyValue(n).trim() || f;
   const items = [
-    [v('--text', '#1D1D1F'), 'Fixed'],
-    [v('--accent', '#0B7A4B'), 'Flexible'],
-    [v('--danger', '#D93025'), "Won't fit"],
-  ];
+    [v('--text', '#1D1D1F'), 'Fixed', fixed],
+    [v('--accent', '#0B7A4B'), 'Flexible', flexible],
+    [v('--danger', '#D93025'), "Won't fit", fault],
+  ].filter(([, , show]) => show);
   for (const [c, label] of items) {
     const i = document.createElement('span');
     i.className = 'legend-item';
@@ -188,6 +202,7 @@ function renderDayLabel() {
   const [y, m, d] = store.day.split('-').map(Number);
   const dt = new Date(y, m - 1, d);
   els.dayLabel.textContent = dt.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+  els.dayPicker.value = store.day;
 }
 
 // -- the map ---------------------------------------------------------------
@@ -226,16 +241,101 @@ function driveSecondsBetween(a, b) {
 const schedule = new Schedule({
   store, els,
   onEditStop: (id, opts) => openStop(id, opts),
+  onCreateStop: (draft) => openNewStop(draft),
   onHoverStop: (id) => map.setHover(id),
+  onResolveConflict: resolveConflict,
   driveSecondsBetween,
   toast,
 });
 
+/**
+ * Move a colliding stop to when the stop it overlaps ends.
+ *
+ * A conflict was named and then abandoned: the status line counted overlaps
+ * while the grid drew the pair as two crushed half-width columns, and pulling
+ * two pinned appointments apart by hand was the only way out. Both stops are
+ * pinned by definition (`pinnedOverlaps`), so which one yields is a real
+ * decision — this moves the one whose badge was pressed, and leaves it pinned,
+ * because the person just told us it is the movable one. Undo covers the rest.
+ */
+function resolveConflict(id) {
+  const s = store.byId(id);
+  if (!s?.start) return;
+  const from = toMin(s.start);
+  const endOf = (x) => toMin(x.start) + Math.max(5, x.dwell || 30);
+
+  // The overlapping neighbours that actually cover this stop's start.
+  const blockers = store.scheduled()
+    .filter((x) => x.id !== id && toMin(x.start) <= from && endOf(x) > from);
+  if (!blockers.length) return;
+
+  // Land it after the blocker ENDS plus the drive between them, when the
+  // cached matrix knows it. Without the travel allowance the "fix" simply
+  // trades a collision for a "Runs late" — technically truthful, but it has
+  // not resolved anything the person can act on.
+  const last = blockers.reduce((a, x) => (endOf(x) > endOf(a) ? x : a), blockers[0]);
+  const drive = driveSecondsBetween(last, s);
+  const travel = Number.isFinite(drive) ? Math.ceil(drive / 60) : 0;
+  const target = Math.max(...blockers.map(endOf)) + travel;
+  if (target + Math.max(5, s.dwell || 30) > R.DAY_END_MIN) {
+    toast('Moving this stop would push it past the end of the day.', 'warn');
+    return;
+  }
+  store.update(id, { start: toHM(target) });
+  toast(travel
+    ? `Moved to ${toHM(target)}, allowing ${travel} min to drive there.`
+    : `Moved to ${toHM(target)}.`, 'ok');
+}
+
 const tray = new Tray({
   store, els, toast,
-  onFocusStop: (id) => { const s = store.byId(id); if (s?.lat) map.flyTo(s); else openStop(id); },
+  onFocusStop: (id) => openStop(id),
   onHoverStop: (id) => map.setHover(id),
+  onPlaceStop: placeInFirstGap,
 });
+
+/**
+ * Put an unscheduled stop into the first gap in the day that can hold it.
+ *
+ * The schedule already computes and names its idle time ("78 min free"); the
+ * tray already holds what is waiting for it. Nothing connected the two, so the
+ * only way to act on a gap was to drag — which is also the one interaction a
+ * keyboard cannot perform.
+ *
+ * Gaps are measured on the clock alone. Drive time between neighbours is NOT
+ * subtracted here, because knowing it would need a matrix that includes a stop
+ * which is by definition not in the route yet, and PRODUCT.md forbids the drag
+ * loop waiting on the network. Placing optimistically is safe now that an
+ * infeasible result marks itself on every recompute: if the stop does not
+ * really fit, it lands and immediately says "Runs late" rather than lying.
+ */
+function placeInFirstGap(id) {
+  const s = store.byId(id);
+  if (!s) return;
+  const dwell = Math.max(5, s.dwell || 30);
+
+  const day = store.scheduled()
+    .slice()
+    .sort((a, b) => toMin(a.start) - toMin(b.start));
+
+  // Candidate windows: before the first stop, between each pair, after the last.
+  const windows = [];
+  let cursor = R.DAY_START_MIN;
+  for (const st of day) {
+    const from = toMin(st.start);
+    if (from - cursor >= dwell) windows.push(cursor);
+    cursor = Math.max(cursor, from + Math.max(5, st.dwell || 30));
+  }
+  if (R.DAY_END_MIN - cursor >= dwell) windows.push(cursor);
+
+  if (!windows.length) {
+    toast(`No gap in the day is long enough for ${dwell} minutes.`, 'warn');
+    return;
+  }
+  store.update(id, { day: store.day, start: toHM(windows[0]) });
+  setView('schedule');
+  toast(`Scheduled at ${toHM(windows[0])}.`, 'ok');
+}
 
 // -- the recompute loop ----------------------------------------------------
 function withIndex(stops, m) {
@@ -271,11 +371,17 @@ function emptyTotals() {
  * It reverts to "Copy" the moment the underlying route actually changes, so
  * "Open" never fires a stale link that no longer matches what's on screen.
  */
+const COARSE = window.matchMedia?.('(pointer: coarse)');
+
 function setMapsButtonState() {
   const stale = copiedSignature !== null && copiedSignature !== linkSignature(links);
   if (stale) copiedSignature = null;
-  const isOpenState = !stale && copiedSignature !== null && links.length > 0;
-  els.btnMapsActionLabel.textContent = isOpenState ? 'Open in Maps' : 'Copy link';
+  // Copy-then-open is a desktop flow: you copy a link to put it somewhere.
+  // On the device that actually drives, there is nowhere to paste it — the
+  // next action is always "open this in Maps", so the button starts there.
+  const isOpenState = links.length > 0
+    && (COARSE?.matches || (!stale && copiedSignature !== null));
+  els.btnMapsActionLabel.textContent = links.length > 1 ? `Directions · ${links.length} legs` : isOpenState ? 'Open in Maps' : 'Copy link';
   els.btnMapsAction.classList.toggle('is-ready', isOpenState);
   els.btnMapsAction.disabled = !links.length;
 }
@@ -296,9 +402,16 @@ function routableChanged(ids) {
   return false;
 }
 
-async function recompute({ fit = false, unfitIds = null } = {}) {
+async function recompute({ fit = false, unfitIds = null, retry = false } = {}) {
+  const token = ++computeToken;
+  ++geomToken;
+  clearTimeout(geomTimer);
   const dayStops = store.scheduled();
   const routable = dayStops.filter((s) => Number.isFinite(s.lat) && Number.isFinite(s.lng));
+  const routeInput = withOrigin(routable);
+  links = [];
+  $('btnRetryRoute').hidden = true;
+  setMapsButtonState();
   els.totStops.textContent = String(dayStops.length);
   els.btnUndo.disabled = !store.canUndo();
   renderOrigin();
@@ -306,16 +419,19 @@ async function recompute({ fit = false, unfitIds = null } = {}) {
   // Optimising needs two points to reorder between. Leaving the button live on
   // an empty or single-stop day offers an action that provably cannot do
   // anything, which is worse than saying so up front.
-  els.btnOptimize.disabled = routable.length < 2;
+  els.btnOptimize.disabled = optimizing || routable.length < (store.origin ? 2 : 3);
+  els.btnOptimize.title = store.origin ? 'Reorder flexible stops around fixed appointments' : 'Add at least three located stops, or set a starting point';
+  $('mobileTrayCount').textContent = String(store.stops.filter((s) => !s.day).length);
 
   // A key for marks that aren't on screen is noise; so is a ruled empty grid
   // with nothing telling you how to fill it.
   const bare = dayStops.length === 0;
   els.lineEmpty.hidden = !bare;
   els.legend.hidden = bare;
+  $('schedulePane').classList.toggle('is-empty', bare);
 
   const conflictIds = currentConflicts();
-  const routableIds = new Set(routable.map((s) => s.id));
+  const routableIds = new Set(routeInput.map((s) => `${s.id}:${s.lat},${s.lng}`));
   const shouldFit = fit || routableChanged(routableIds);
   lastRoutableIds = routableIds;
 
@@ -324,21 +440,39 @@ async function recompute({ fit = false, unfitIds = null } = {}) {
   const seqByIdEmpty = new Map();
   routable.forEach((s, i) => seqByIdEmpty.set(s.id, i + 1));
 
-  if (routable.length < 2) {
+  if (!routable.length || routeInput.length < 2) {
+    lastMatrix = null;
     emptyTotals();
+    links = G.buildLinks(routable);
+    setMapsButtonState();
+    renderRouteNotes(dayStops, routable, routeInput);
     schedule.setPlan({ seqById: seqByIdEmpty, driveInById: new Map(), unfitIds: new Set(), conflictIds, orderedIds: routable.map((s) => s.id) });
     const originOnly = originStop(firstStartMin(routable));
     const sparse = [...(originOnly ? [{ ...originOnly, isOrigin: true }] : []), ...routable];
     map.setStops(sparse);
     map.setRoute(null);
     if (shouldFit && sparse.length) map.fit(sparse);
+    renderLegend({
+      fixed: dayStops.some((s) => s.pinned),
+      flexible: dayStops.some((s) => !s.pinned),
+      fault: conflictIds.size > 0,
+    });
     if (conflictIds.size) status(`${conflictIds.size} appointments overlap`, 'error');
     else status('Ready', 'ok');
     return;
   }
 
-  const routeInput = withOrigin(routable);
-  const m = await R.fetchMatrix(routeInput);
+  els.totDrive.textContent = '…';
+  els.totDist.textContent = '…';
+  status('Calculating route…', 'busy');
+  if (shouldFit) {
+    map.setRoute(null);
+    map.setStops(routeInput.map((s) => ({ ...s, isOrigin: s.id === ORIGIN_ID })));
+    map.fit(routeInput);
+  }
+  const m = await R.fetchMatrix(routeInput, { refresh: retry });
+  if (token !== computeToken) return;
+  $('btnRetryRoute').hidden = !m.estimated;
   lastMatrix = m;
   const mstops = withIndex(routeInput, m);
   const order = mstops.map((_, i) => i);           // time order IS the route order
@@ -355,7 +489,22 @@ async function recompute({ fit = false, unfitIds = null } = {}) {
     if (to && to.id !== ORIGIN_ID) driveInById.set(to.id, leg.duration);
   });
 
-  schedule.setPlan({ seqById, driveInById, unfitIds: unfitIds || new Set(), conflictIds, orderedIds: routable.map((s) => s.id) });
+  // A stop the clock cannot reach is a fault whether or not Optimize ever ran.
+  // `unfitIds` is only ever populated by optimize(), so a day built by hand into
+  // an impossible shape — which is the normal way you discover a conflict —
+  // showed the legend's red mark on nothing at all, and reported the problem as
+  // one line of 12px text in the rail footer, ~900px from the stop it named.
+  // plan() already knows: `lateId` is computed on every recompute. Fold it in so
+  // the card, the badge and the map pin all carry it at once.
+  const marked = new Set(unfitIds || []);
+  if (!p.feasible && p.lateId) marked.add(p.lateId);
+  schedule.setPlan({ seqById, driveInById, unfitIds: marked, lateId: p.feasible ? null : p.lateId, conflictIds, orderedIds: routable.map((s) => s.id) });
+
+  renderLegend({
+    fixed: dayStops.some((s) => s.pinned),
+    flexible: dayStops.some((s) => !s.pinned),
+    fault: marked.size > 0 || conflictIds.size > 0,
+  });
 
   els.totDrive.textContent = fmtDur(p.totalDur);
   els.totDist.textContent = fmtMiles(p.totalDist);
@@ -363,25 +512,37 @@ async function recompute({ fit = false, unfitIds = null } = {}) {
   const originPin = originStop(firstStartMin(routable));
   map.setStops([
     ...(originPin ? [{ ...originPin, isOrigin: true }] : []),
-    ...routable.map((s) => ({ ...s, unfit: unfitIds?.has(s.id), conflict: conflictIds.has(s.id) })),
+    ...routable.map((s) => ({ ...s, unfit: marked.has(s.id), conflict: conflictIds.has(s.id) })),
   ]);
   if (shouldFit) map.fit(routeInput);
 
   links = G.buildLinks(routeInput);
   setMapsButtonState();
-  const caveat = G.linkCaveat(routeInput, links);
-  els.mapsNote.textContent = caveat || '';
-  els.mapsNote.hidden = !caveat;
+
+  // "Stops 4" alongside a drive time computed from 3 of them is two figures
+  // disagreeing about what the day is. Principle 2: never silently drop a stop.
+  renderRouteNotes(dayStops, routable, routeInput, p.estimated);
 
   if (conflictIds.size) status(`${conflictIds.size} appointments overlap`, 'error');
-  else if (p.estimated) status('Estimated — routing offline', 'error');
   else if (!p.feasible) {
     const lateStop = p.lateId ? store.byId(p.lateId) : null;
     status(lateStop ? `Can't reach "${lateStop.name || lateStop.address}" in time` : 'Schedule runs late', 'error');
   }
+  else if (p.estimated) status('Estimated drive times — verify in Maps', 'error');
   else status('Ready', 'ok');
 
   drawGeometry(routeInput, p.estimated);
+}
+
+function renderRouteNotes(dayStops, routable, routeInput, estimated = false) {
+  const missing = dayStops.length - routable.length;
+  const notes = [];
+  if (missing) notes.push(`${missing} stop${missing === 1 ? '' : 's'} missing a location. Edit the address to include ${missing === 1 ? 'it' : 'them'} in directions and totals.`);
+  if (estimated) notes.push('Road data unavailable for some travel. Times and miles are estimates.');
+  const caveat = G.linkCaveat(routeInput, links);
+  if (caveat) notes.push(caveat);
+  els.mapsNote.textContent = notes.join(' ');
+  els.mapsNote.hidden = !notes.length;
 }
 
 // Only this touches the network on a drag, and only after things settle.
@@ -534,6 +695,7 @@ async function searchOrigin(q) {
 
 els.originAddr.addEventListener('input', () => {
   clearTimeout(originTimer);
+  originAbort?.abort();
   originPick = null;                       // typing invalidates the last pick
   const q = els.originAddr.value.trim();
   if (q.length < 3) { renderOriginHits([]); return; }
@@ -630,6 +792,7 @@ els.originForm.addEventListener('submit', async (e) => {
 
 // -- optimise --------------------------------------------------------------
 async function optimise() {
+  if (optimizing) return;
   const routable = store.routable();
   // With a starting point, even two stops have a real best order — which one to
   // drive to first. Without one, two stops read the same either way.
@@ -639,26 +802,26 @@ async function optimise() {
     return;
   }
 
+  optimizing = true;
+  const revision = dataRevision;
   els.btnOptimize.disabled = true;
+  els.btnOptimize.setAttribute('aria-busy', 'true');
   els.btnOptimize.classList.add('is-working');
   status('Optimizing…', 'busy');
   schedule.captureRects();
   try {
     const routeInput = withOrigin(routable);
     const m = await R.fetchMatrix(routeInput);
+    if (revision !== dataRevision) {
+      toast('The day changed while calculating. Optimize again when you are ready.', 'info');
+      return;
+    }
     const mstops = withIndex(routeInput, m);
     const win = dayWindow(mstops, m);
     const before = R.plan(mstops.map((_, i) => i), mstops, m, win);
     const { order, unfit } = R.optimize(mstops, m, win);
-
-    // The commit and the headline totals use `order` as-is — an unfit stop's
-    // real time is never touched. The savings figure alone needs a fair
-    // apples-to-apples population: comparing `order` (which EXCLUDES unfit
-    // stops) against `before` (which includes everyone) would silently credit
-    // "less driving" for a stop that just got dropped from the route, not one
-    // that was actually driven more efficiently.
-    const fairOrder = unfit.length ? R.comparisonOrder(order, unfit, mstops, m) : order;
-    const after = R.plan(fairOrder, mstops, m, win);
+    const actual = R.plan(order, mstops, m, win);
+    if (!actual.feasible) throw new Error('No feasible route');
 
     const unfitIds = new Set(unfit.map((i) => routeInput[i].id));
 
@@ -668,15 +831,19 @@ async function optimise() {
         // The origin is pinned, so it is skipped here anyway; the guard states
         // the intent rather than relying on that coincidence.
         if (s.id === ORIGIN_ID || s.pinned) return;  // an appointment keeps its clock time
-        store.update(s.id, { start: toHM(after.times[k]) }, { checkpoint: false, silent: true });
+        store.update(s.id, { start: toHM(actual.times[k]) }, { checkpoint: false, silent: true });
       });
     });
 
+    // Compare the actual resulting schedule, including unchanged unfit stops.
+    // An optimistically reinserted comparison route is not the route on screen.
+    const committed = withIndex(withOrigin(store.routable()), m);
+    const after = R.plan(committed.map((_, i) => i), committed, m, win);
     const saved = before.totalDur - after.totalDur;
     els.delta.hidden = false;
     els.delta.dataset.dir = saved >= 0 ? 'better' : 'worse';
     els.deltaLabel.textContent = (saved >= 0 ? 'less driving' : 'more driving')
-      + (unfitIds.size ? ` · ${unfitIds.size} excluded` : '');
+      + (unfitIds.size ? ` · ${unfitIds.size} won't fit` : '');
     countTo(els.deltaFigure, Math.abs(saved), saved >= 0 ? '−' : '+');
     lastDriveBefore = before.totalDur;
 
@@ -691,23 +858,43 @@ async function optimise() {
       toast('Already about as tight as it gets.', 'info');
     }
   } catch {
-    toast('Could not optimise — routing service unreachable.', 'error');
-    status('Routing offline', 'error');
+    toast('Could not find a workable route. Your stops are unchanged; check fixed times and try again.', 'error');
   } finally {
-    els.btnOptimize.disabled = routableToday().length < 2;
+    optimizing = false;
+    els.btnOptimize.disabled = routableToday().length < (store.origin ? 2 : 3);
+    els.btnOptimize.removeAttribute('aria-busy');
     els.btnOptimize.classList.remove('is-working');
   }
 }
 
 // -- the stop sheet --------------------------------------------------------
-function openStop(id, { isNew = false } = {}) {
-  const s = store.byId(id);
+function openNewStop(partial = {}) {
+  let minute = R.DAY_START_MIN;
+  for (const s of store.scheduled()) {
+    if (toMin(s.start) - minute >= 30) break;
+    minute = Math.max(minute, toMin(s.start) + Math.max(5, s.dwell || 30));
+  }
+  stopDraft = { name: '', address: '', dwell: 30, day: store.day,
+    start: minute + 30 <= R.DAY_END_MIN ? toHM(minute) : '', ...partial };
+  openStop(null);
+}
+
+function openStop(id) {
+  const s = id ? store.byId(id) : stopDraft;
   if (!s) return;
   editingId = id;
-  els.stopSheetTitle.textContent = isNew ? 'New stop' : 'Edit stop';
+  if (id) stopDraft = null;
+  els.stopSheetTitle.textContent = id ? 'Edit stop' : 'New stop';
+  els.stopDelete.hidden = !id;
   els.stopName.value = s.name || '';
   els.stopAddr.value = s.address || '';
   els.stopDwell.value = String(s.dwell || 30);
+  // A stop's time was settable only by dragging it on the grid — so the exact
+  // time of a fixed appointment, the product's own central claim, could not be
+  // typed by anyone, and could not be set at all without a mouse.
+  els.stopStart.value = s.start || '';
+  els.stopStart.disabled = false;
+  els.stopDayHint.textContent = `Scheduled on ${els.dayLabel.textContent}. Leave the time blank to keep it unscheduled.`;
   els.stopPinned.checked = !!s.pinned;
   els.stopGeoNote.textContent = s.geoStatus === 'ok' ? 'Located.' : s.geoStatus === 'fail' ? 'Address not found.' : '';
   els.stopGeoNote.dataset.state = s.geoStatus === 'ok' ? 'ok' : s.geoStatus === 'fail' ? 'bad' : '';
@@ -715,33 +902,58 @@ function openStop(id, { isNew = false } = {}) {
   setTimeout(() => els.stopName.focus(), 30);
 }
 
-els.stopSheet.addEventListener('close', async () => {
-  const id = editingId;
-  editingId = null;
-  if (!id || els.stopSheet.returnValue !== 'ok') return;
-  const s = store.byId(id);
+els.stopForm.addEventListener('submit', (e) => {
+  e.preventDefault();
+  const s = editingId ? store.byId(editingId) : stopDraft;
   if (!s) return;
-
+  const name = els.stopName.value.trim();
   const addr = els.stopAddr.value.trim();
-  const changed = addr !== (s.address || '');
-  store.update(id, {
-    name: els.stopName.value.trim() || addr,
-    address: addr,
-    dwell: Math.max(5, Number(els.stopDwell.value) || 30),
-    pinned: els.stopPinned.checked,
-    ...(changed ? { lat: null, lng: null, geoStatus: 'none' } : {}),
-  });
-
-  if (changed && addr) {
-    status('Locating…', 'busy');
-    const hit = await geo.resolve(addr);
-    if (!store.byId(id)) return;
-    store.update(id, hit
-      ? { lat: hit.lat, lng: hit.lng, geoStatus: 'ok' }
-      : { geoStatus: 'fail' }, { checkpoint: false });
-    if (!hit) toast('That address could not be found.', 'warn');
+  const start = els.stopStart.value;
+  const dwell = Number(els.stopDwell.value);
+  if (!name && !addr) {
+    els.stopGeoNote.textContent = 'Add a name or address before saving.';
+    els.stopGeoNote.dataset.state = 'bad';
+    els.stopName.focus();
+    return;
   }
+  if (start && toMin(start) + dwell > 24 * 60) {
+    els.stopGeoNote.textContent = 'This visit extends past midnight. Choose an earlier time or a shorter visit.';
+    els.stopGeoNote.dataset.state = 'bad';
+    els.stopStart.focus();
+    return;
+  }
+  const changed = addr !== (s.address || '');
+  const patch = {
+    name: name || addr,
+    address: addr,
+    dwell,
+    pinned: els.stopPinned.checked,
+    start: start || null,
+    day: start ? (s.day || store.day) : null,
+    ...(changed ? { lat: null, lng: null, geoStatus: 'none' } : {}),
+  };
+  const id = editingId || store.add(patch).id;
+  if (editingId) store.update(id, patch);
+  els.stopSheet.close('ok');
+  if (start) setView('schedule');
+  if (addr && (changed || s.geoStatus !== 'ok')) locateStop(id, addr);
 });
+
+async function locateStop(id, address) {
+  const hit = await geo.resolve(address);
+  const current = store.byId(id);
+  if (!current || current.address !== address) return;
+  store.update(id, hit
+    ? { lat: hit.lat, lng: hit.lng, geoStatus: 'ok' }
+    : { geoStatus: 'fail' }, { checkpoint: false });
+  if (!hit) toast('Address not found. Edit the stop to try a fuller address, then Save to retry.', 'warn');
+}
+
+els.stopSheet.addEventListener('close', () => { editingId = null; stopDraft = null; });
+els.btnAddStop.addEventListener('click', () => openNewStop());
+els.btnFirstStop.addEventListener('click', () => openNewStop());
+$('btnManualStop').addEventListener('click', () => openNewStop({ start: '' }));
+$('btnRetryRoute').addEventListener('click', () => recompute({ retry: true }));
 
 els.stopDelete.addEventListener('click', () => {
   if (editingId) store.remove(editingId);
@@ -758,9 +970,28 @@ els.btnUndo.addEventListener('click', () => {
 
 els.btnMapsAction.addEventListener('click', async () => {
   if (!links.length) return;
+  if (links.length > 1) {
+    els.mapsLegs.replaceChildren();
+    links.forEach((leg, i) => {
+      const a = document.createElement('a');
+      a.className = 'maps-leg';
+      a.href = leg.url;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      const title = document.createElement('strong');
+      title.textContent = `Open leg ${i + 1}`;
+      const detail = document.createElement('span');
+      detail.textContent = `${leg.from} → ${leg.to}`;
+      a.append(title, detail);
+      els.mapsLegs.append(a);
+    });
+    els.mapsSheet.showModal();
+    return;
+  }
 
-  if (copiedSignature === linkSignature(links)) {
+  if (COARSE?.matches || copiedSignature === linkSignature(links)) {
     // Already copied and nothing's changed since — this click means "go."
+    // On a touch device it always means "go"; see setMapsButtonState.
     window.open(links[0].url, '_blank', 'noopener');
     return;
   }
@@ -778,6 +1009,27 @@ els.btnMapsAction.addEventListener('click', async () => {
   }
 });
 
+els.btnCopyLegs.addEventListener('click', async () => {
+  const text = links.map((l, i) => `Leg ${i + 1} — ${l.from} → ${l.to}\n${l.url}`).join('\n\n');
+  const ok = await G.copyText(text);
+  toast(ok ? 'All leg links copied.' : 'Could not copy. Open a leg directly instead.', ok ? 'ok' : 'error');
+});
+
+function setView(view) {
+  $('app').dataset.view = view;
+  document.querySelectorAll('.view-switch [data-view]').forEach((button) => {
+    button.setAttribute('aria-pressed', String(button.dataset.view === view));
+  });
+  requestAnimationFrame(() => {
+    schedule.cal.updateSize();
+    schedule.scheduleDraw();
+    map.resize();
+  });
+}
+document.querySelectorAll('.view-switch [data-view]').forEach((b) => {
+  b.addEventListener('click', () => setView(b.dataset.view));
+});
+
 function shiftDay(delta) {
   const [y, m, d] = store.day.split('-').map(Number);
   const dt = new Date(y, m - 1, d + delta);
@@ -786,18 +1038,26 @@ function shiftDay(delta) {
 els.dayPrev.addEventListener('click', () => shiftDay(-1));
 els.dayNext.addEventListener('click', () => shiftDay(1));
 els.dayToday.addEventListener('click', () => store.setDay(todayISO()));
+els.dayPicker.addEventListener('change', () => {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(els.dayPicker.value)) store.setDay(els.dayPicker.value);
+});
 
 document.addEventListener('keydown', (e) => {
-  if (e.target.matches('input, textarea')) return;
+  if (document.querySelector('dialog[open]') || e.target.closest('input, textarea, select, [contenteditable="true"]')) return;
   if ((e.metaKey || e.ctrlKey) && e.key === 'z') { e.preventDefault(); if (store.undo()) toast('Reverted.', 'info'); }
   else if (e.key === 'o' && !e.metaKey && !e.ctrlKey) { e.preventDefault(); optimise(); }
   else if (e.key === '[') shiftDay(-1);
   else if (e.key === ']') shiftDay(1);
-  else if (e.key === '/') { e.preventDefault(); els.searchInput.focus(); }
+  else if (e.key === '/') { e.preventDefault(); setView('places'); els.searchInput.focus(); }
 });
 
 // -- the one place everything redraws from ---------------------------------
 store.addEventListener('change', (e) => {
+  ++dataRevision;
+  if (!optimizing) els.delta.hidden = true;
+  if (els.mapsSheet.open) els.mapsSheet.close();
+  document.querySelector('.local-note').textContent = store.saveFailed
+    ? 'Not saved — browser storage unavailable. Keep this tab open.' : 'Saved on this browser';
   renderDayLabel();
   tray.render();
   schedule.refresh();
@@ -806,7 +1066,8 @@ store.addEventListener('change', (e) => {
 
 window.addEventListener('resize', () => { map.resize(); schedule.scheduleDraw(); });
 
-renderLegend();
+renderLegend({});
+setView('schedule');
 renderDayLabel();
 tray.render();
 schedule.refresh();

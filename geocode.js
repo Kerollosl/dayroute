@@ -1,20 +1,24 @@
 // geocode.js — keyless address lookup.
 // Photon leads (better at bare place names); Nominatim backs it up for structured
 // addresses. Both are courtesy endpoints capped near 1 req/s, so every call goes
-// through one serialized queue and every result is cached forever — an address
-// does not move, so there is nothing for a TTL to protect.
+// through one serialized queue. Successful locations are cached; a failed
+// lookup remains retryable after a service outage or a corrected address.
 
 const CACHE_KEY = 'dayroute.geocache.v1';
 const MIN_GAP_MS = 1100;
+const REQUEST_TIMEOUT_MS = 8000;
 const PHOTON = 'https://photon.komoot.io/api/';
 const NOMINATIM = 'https://nominatim.openstreetmap.org/search';
 
 const norm = (q) => String(q || '').trim().toLowerCase().replace(/\s+/g, ' ');
+const validPoint = (p) => p && Number.isFinite(p.lat) && Number.isFinite(p.lng)
+  && Math.abs(p.lat) <= 90 && Math.abs(p.lng) <= 180;
 
 let cache = new Map();
 try {
   const raw = localStorage.getItem(CACHE_KEY);
-  if (raw) cache = new Map(Object.entries(JSON.parse(raw)));
+  // Older versions persisted null misses forever, including network failures.
+  if (raw) cache = new Map(Object.entries(JSON.parse(raw)).filter(([, value]) => validPoint(value)));
 } catch { /* unreadable cache is an empty cache, never a failure */ }
 
 let flushTimer = null;
@@ -31,10 +35,17 @@ export const cacheSize = () => cache.size;
 let chain = Promise.resolve();
 let lastAt = 0;
 
-function queued(fn) {
+function throwIfCancelled(signal) {
+  if (signal?.aborted) throw signal.reason || new DOMException('Search cancelled', 'AbortError');
+}
+
+function queued(fn, signal) {
   const run = chain.then(async () => {
+    throwIfCancelled(signal);
     const wait = Math.max(0, MIN_GAP_MS - (Date.now() - lastAt));
     if (wait) await new Promise((r) => setTimeout(r, wait));
+    // An obsolete typeahead never spends another rate-limit slot.
+    throwIfCancelled(signal);
     try { return await fn(); } finally { lastAt = Date.now(); }
   });
   chain = run.catch(() => {});
@@ -42,9 +53,19 @@ function queued(fn) {
 }
 
 async function getJSON(url, signal) {
-  const res = await fetch(url, { signal, headers: { Accept: 'application/json' } });
-  if (!res.ok) throw new Error(`${res.status}`);
-  return res.json();
+  throwIfCancelled(signal);
+  const controller = new AbortController();
+  const cancel = () => controller.abort(signal.reason);
+  signal?.addEventListener('abort', cancel, { once: true });
+  const timer = setTimeout(() => controller.abort(new DOMException('Location search timed out', 'TimeoutError')), REQUEST_TIMEOUT_MS);
+  try {
+    const res = await fetch(url, { signal: controller.signal, headers: { Accept: 'application/json' } });
+    if (!res.ok) throw new Error(`${res.status}`);
+    return await res.json();
+  } finally {
+    clearTimeout(timer);
+    signal?.removeEventListener('abort', cancel);
+  }
 }
 
 /** Compose a readable second line from Photon's address parts. */
@@ -61,7 +82,7 @@ function fromPhoton(json) {
       const p = f.properties || {};
       const [lng, lat] = f.geometry.coordinates;
       return { name: p.name || p.street || p.city || 'Unnamed', label: photonLabel(p), lat, lng };
-    });
+    }).filter(validPoint);
 }
 
 function fromNominatim(json) {
@@ -75,7 +96,7 @@ function fromNominatim(json) {
         lat: Number(r.lat),
         lng: Number(r.lon),
       };
-    });
+    }).filter(validPoint);
 }
 
 /**
@@ -89,11 +110,11 @@ export async function search(query, { near = null, limit = 6, signal } = {}) {
   const q = norm(query);
   if (q.length < 3) return [];
   let url = `${PHOTON}?q=${encodeURIComponent(q)}&limit=${limit}`;
-  if (near && Number.isFinite(near.lat)) url += `&lat=${near.lat.toFixed(4)}&lon=${near.lng.toFixed(4)}`;
+  if (validPoint(near)) url += `&lat=${near.lat.toFixed(4)}&lon=${near.lng.toFixed(4)}`;
 
   const nurl = `${NOMINATIM}?format=jsonv2&addressdetails=1&limit=${limit}&q=${encodeURIComponent(q)}`;
-  const askPhoton = () => queued(() => getJSON(url, signal)).then(fromPhoton);
-  const askNominatim = () => queued(() => getJSON(nurl, signal)).then(fromNominatim);
+  const askPhoton = () => queued(() => getJSON(url, signal), signal).then(fromPhoton);
+  const askNominatim = () => queued(() => getJSON(nurl, signal), signal).then(fromNominatim);
 
   // Route to ONE provider rather than merging both: every call goes through a
   // 1.1s rate-limit queue, so asking twice in sequence doubled the latency of a
@@ -136,8 +157,8 @@ export async function search(query, { near = null, limit = 6, signal } = {}) {
 }
 
 /**
- * Resolve one address to a point. Cached forever, including misses — a query
- * that failed will fail the same way next time, and re-asking is rude.
+ * Resolve one address to a point. Cache successful coordinates; misses and
+ * service failures must be retryable when connectivity returns.
  * @returns {Promise<{lat:number,lng:number,label:string}|null>}
  */
 export async function resolve(address) {
@@ -162,8 +183,10 @@ export async function resolve(address) {
   }
 
   const value = hit ? { lat: hit.lat, lng: hit.lng, label: hit.label || hit.name } : null;
-  cache.set(q, value);
-  persist();
+  if (value) {
+    cache.set(q, value);
+    persist();
+  }
   return value;
 }
 
@@ -184,8 +207,10 @@ export async function reverse(lat, lng) {
     label = j && typeof j.display_name === 'string' ? j.display_name : null;
   } catch { /* offline or throttled — the coordinates are still usable */ }
   const value = label ? { lat, lng, label } : null;
-  cache.set(key, value);
-  persist();
+  if (value) {
+    cache.set(key, value);
+    persist();
+  }
   return value;
 }
 

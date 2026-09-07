@@ -32,15 +32,45 @@ All keyless, all courtesy endpoints — please keep usage personal.
 | Address fallback | [Nominatim](https://nominatim.openstreetmap.org) |
 | Matrix + route | [OSRM](https://project-osrm.org) public server |
 
-Geocoding results are cached permanently in the browser; the driving matrix is
-cached per coordinate set, so reordering never re-fetches.
+Successful geocoding results are cached in the browser; failed lookups remain
+retryable. The driving matrix is cached per coordinate set and simultaneous
+requests share the same work, so reordering never re-fetches.
+
+## Using the day
+
+- **Add stop** creates a draft. Save a name/address, arrival time and visit length;
+  Cancel or Escape leaves the day untouched. Clear the time to keep a stop unscheduled.
+- Choose a date directly or use the day arrows. On phones, switch between
+  **Schedule**, **Map** and **Places** without scrolling through the entire day.
+- Search or paste places into Unscheduled. Open one to edit it, or use **+** to
+  place it in the first available clock gap. Drive time is checked once located.
+- **Optimize** moves only flexible stops. Fixed clocks and unfit stops stay unchanged.
+  Use **Undo** to reverse the operation.
+- A single destination works with or without a saved starting point. Longer
+  days open a directions sheet with every leg available individually.
 
 ## Known ceilings
 
-- Google Maps links take **9 waypoints** (11 stops). Longer days split into chained legs.
-- **Mobile browsers honour only 3** waypoints; the Google Maps app takes all of them.
+- Maps links use at most **3 intermediate waypoints** (5 locations per leg),
+  including on desktop, so copied links also work in phone browsers. Consecutive
+  legs share an endpoint; open each in order.
 - OSRM's public server is best-effort and rate-limited. If it is unreachable the day
   still computes from straight-line estimates, drawn dashed and marked as estimates.
+- **Retry routing** requests fresh road data after an outage. Drive times are not
+  live traffic predictions; check Maps before leaving.
+- Scheduling is local to this browser, not synced between devices. A Maps link
+  shares directions, not an editable Dayroute schedule. Visit lengths are 5–720
+  minutes; optimization uses a 20:00 end-of-day bound.
+
+## Verification
+
+```bash
+node --test tests/core.test.mjs
+```
+
+The dependency-free regression suite covers routing failures/timeouts, cache
+deduplication, origin and fixed-time constraints, overlapping appointments,
+geocoding recovery, local-storage failure and mobile-safe Maps handoff.
 
 ## Keys
 

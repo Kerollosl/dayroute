@@ -39,14 +39,14 @@ DESIGN.md, and every shipping raster carrying its provenance.
         <circle cx="8" cy="22" r="2.6" fill="#fff"/>
         <circle cx="24" cy="10" r="2.6" fill="#fff"/>
       </svg>
-      <span class="brand-name">dayroute</span>
+      <h1 class="brand-name">dayroute</h1>
     </header>
 
     <nav class="daynav" aria-label="Day">
       <button class="daynav-btn" id="dayPrev" aria-label="Previous day">
         <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3 L5 8 L10 13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
-      <button class="daynav-date" id="dayLabel" aria-live="polite">—</button>
+      <label class="daynav-date"><span id="dayLabel" aria-live="polite">—</span><input type="date" id="dayPicker" aria-label="Choose day"></label>
       <button class="daynav-btn" id="dayNext" aria-label="Next day">
         <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3 L11 8 L6 13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
@@ -107,21 +107,31 @@ DESIGN.md, and every shipping raster carrying its provenance.
       </div>
       <div class="search">
         <svg class="search-ico" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10.5 10.5 L14 14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-        <input type="text" id="searchInput" placeholder="Add a place or address" autocomplete="off" spellcheck="false">
+        <input type="text" id="searchInput" placeholder="Add a place or address" autocomplete="off" spellcheck="false" aria-label="Add a place or address">
         <div class="search-results" id="searchResults" hidden></div>
       </div>
       <div class="tray-list" id="trayList"></div>
+      <button class="btn btn--tonal btn--wide" type="button" id="btnManualStop">Add manually</button>
       <button class="btn btn--ghost btn--wide" id="btnPaste">Paste a list</button>
     </section>
 
     <footer class="rail-foot">
-      <span class="status" id="netStatus"><i class="status-dot"></i><span id="netStatusText">Ready</span></span>
+      <span class="status" id="netStatus" role="status"><i class="status-dot"></i><span id="netStatusText">Ready</span></span>
+      <button class="btn btn--ghost" type="button" id="btnRetryRoute" hidden>Retry routing</button>
+      <span class="local-note">Saved on this browser</span>
     </footer>
   </aside>
 
-  <main class="line-pane">
+  <nav class="view-switch" aria-label="Day views">
+    <button type="button" data-view="schedule" aria-pressed="true" aria-controls="schedulePane">Schedule</button>
+    <button type="button" data-view="map" aria-pressed="false" aria-controls="mapPane">Map</button>
+    <button type="button" data-view="places" aria-pressed="false" aria-controls="tray">Places <span id="mobileTrayCount">0</span></button>
+  </nav>
+
+  <main class="line-pane" id="schedulePane">
     <div class="pane-head">
       <h2 class="pane-title">Schedule</h2>
+      <button type="button" class="btn btn--tonal" id="btnAddStop">Add stop</button>
       <div class="legend" id="legend"></div>
     </div>
     <div class="line-body">
@@ -129,12 +139,13 @@ DESIGN.md, and every shipping raster carrying its provenance.
       <svg class="line-overlay" id="lineOverlay" aria-hidden="true"></svg>
       <div class="line-empty" id="lineEmpty" hidden>
         <p class="line-empty-title">No stops scheduled</p>
-        <p class="line-empty-body">Click a time to add one, or drag a place over from Unscheduled.</p>
+        <p class="line-empty-body">Add your first stop. Fix appointment times; leave errands flexible.</p>
+        <button type="button" class="btn btn--primary" id="btnFirstStop">Add your first stop</button>
       </div>
     </div>
   </main>
 
-  <section class="map-pane">
+  <section class="map-pane" id="mapPane" aria-label="Route map">
     <div id="map" class="map"></div>
     <div class="map-scrim" id="mapScrim" hidden><span>Preparing map…</span></div>
   </section>
@@ -175,14 +186,16 @@ DESIGN.md, and every shipping raster carrying its provenance.
 </dialog>
 
 <dialog class="sheet" id="stopSheet">
-  <form method="dialog" class="sheet-inner">
+  <form method="dialog" class="sheet-inner" id="stopForm">
     <h3 class="sheet-title" id="stopSheetTitle">Stop</h3>
     <label class="field"><span>Name</span><input type="text" id="stopName" autocomplete="off"></label>
     <label class="field"><span>Address</span><input type="text" id="stopAddr" autocomplete="off"></label>
     <div class="field-row">
-      <label class="field"><span>Time here (min)</span><input type="number" id="stopDwell" min="0" step="5" value="30"></label>
-      <label class="field field--check"><input type="checkbox" id="stopPinned"><span>Fixed time</span></label>
+      <label class="field"><span>Arrive at</span><input type="time" id="stopStart" step="60"></label>
+      <label class="field"><span>Time here (min)</span><input type="number" id="stopDwell" min="5" max="720" step="5" value="30" required></label>
     </div>
+    <p class="sheet-help" id="stopDayHint">Leave the time blank to keep this stop unscheduled.</p>
+    <label class="field field--check"><input type="checkbox" id="stopPinned"><span>Fixed time — the optimizer may not move this</span></label>
     <p class="field-note" id="stopGeoNote"></p>
     <div class="sheet-actions">
       <button class="btn btn--danger" id="stopDelete" type="button">Delete</button>
@@ -190,6 +203,18 @@ DESIGN.md, and every shipping raster carrying its provenance.
       <button class="btn btn--primary" value="ok">Save</button>
     </div>
   </form>
+</dialog>
+
+<dialog class="sheet" id="mapsSheet" aria-labelledby="mapsTitle">
+  <div class="sheet-inner">
+    <h3 class="sheet-title" id="mapsTitle">Your route in Maps</h3>
+    <p class="sheet-help">Open each leg in order. The next leg starts where the last one ends, so every stop stays included on your phone.</p>
+    <div id="mapsLegs" class="maps-legs"></div>
+    <div class="sheet-actions">
+      <button type="button" class="btn btn--tonal" id="btnCopyLegs">Copy all links</button>
+      <button type="button" class="btn btn--primary" data-close="ok">Done</button>
+    </div>
+  </div>
 </dialog>
 
 <div class="toast-stack" id="toasts" aria-live="polite"></div>

@@ -8,6 +8,7 @@
 
 const OSRM = 'https://router.project-osrm.org';
 const MIN_GAP_MS = 1050;
+const REQUEST_TIMEOUT_MS = 10000;
 const DAY_START_MIN = 8 * 60;
 const DAY_END_MIN = 20 * 60;
 const FALLBACK_MPH = 32;
@@ -23,6 +24,18 @@ function queued(fn) {
   });
   chain = run.catch(() => {});
   return run;
+}
+
+async function getJSON(url) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  try {
+    const res = await fetch(url, { signal: controller.signal });
+    if (!res.ok) throw new Error(String(res.status));
+    return await res.json();
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 const coordList = (pts) => pts.map((p) => `${p.lng.toFixed(6)},${p.lat.toFixed(6)}`).join(';');
@@ -64,34 +77,53 @@ function estimateMatrix(pts) {
 }
 
 const matrixCache = new Map();
+const matrixPending = new Map();
 
 /**
  * Full N×N driving matrix. One network call, cached by coordinate signature,
  * so dragging a stop never refetches it.
  */
-export async function fetchMatrix(pts) {
+export async function fetchMatrix(pts, { refresh = false } = {}) {
   const { points, index } = canonical(pts);
-  const mi = (p) => index.get(ptKey(p)) ?? 0;
+  const mi = (p) => index.get(ptKey(p));
   if (points.length < 2) return { durations: [[0]], distances: [[0]], estimated: false, index, mi };
   const sig = points.map(ptKey).join(';');
+  if (refresh) matrixCache.delete(sig);
   if (matrixCache.has(sig)) return matrixCache.get(sig);
+  if (matrixPending.has(sig)) return matrixPending.get(sig);
 
-  let out;
-  try {
-    const url = `${OSRM}/table/v1/driving/${coordList(points)}?annotations=duration,distance`;
-    const res = await queued(() => fetch(url));
-    if (!res.ok) throw new Error(String(res.status));
-    const json = await res.json();
-    if (json.code !== 'Ok' || !json.durations) throw new Error(json.code || 'bad response');
-    out = { durations: json.durations, distances: json.distances || null, estimated: false };
-    if (!out.distances) out.distances = estimateMatrix(points).distances;
-  } catch {
-    out = estimateMatrix(points);
-  }
-  out.index = index;
-  out.mi = mi;
-  matrixCache.set(sig, out);
-  return out;
+  const pending = (async () => {
+    let out;
+    try {
+      const url = `${OSRM}/table/v1/driving/${coordList(points)}?annotations=duration,distance`;
+      const json = await queued(() => getJSON(url));
+      if (json.code !== 'Ok' || !Array.isArray(json.durations)) throw new Error(json.code || 'bad response');
+      const fallback = estimateMatrix(points);
+      out = { durations: [], distances: [], estimated: false };
+      // OSRM returns null when it cannot connect a pair. A missing leg is not
+      // a zero-minute drive: keep usable road cells and label any substitute.
+      for (let i = 0; i < points.length; i++) {
+        out.durations[i] = [];
+        out.distances[i] = [];
+        for (let j = 0; j < points.length; j++) {
+          for (const key of ['durations', 'distances']) {
+            const value = json[key]?.[i]?.[j];
+            const usable = Number.isFinite(value) && value >= 0;
+            out[key][i][j] = usable ? value : fallback[key][i][j];
+            if (!usable && i !== j) out.estimated = true;
+          }
+        }
+      }
+    } catch {
+      out = estimateMatrix(points);
+    }
+    out.index = index;
+    out.mi = mi;
+    matrixCache.set(sig, out);
+    return out;
+  })();
+  matrixPending.set(sig, pending);
+  try { return await pending; } finally { matrixPending.delete(sig); }
 }
 
 /** Was this exact point set already fetched? Used to keep the drag loop offline. */
@@ -102,8 +134,8 @@ export function hasMatrix(pts) {
 
 // -- sequence maths --------------------------------------------------------
 
-const dur = (m, a, b) => m.durations?.[a]?.[b] ?? 0;
-const dist = (m, a, b) => m.distances?.[a]?.[b] ?? 0;
+const dur = (m, a, b) => m.durations?.[a]?.[b] ?? Infinity;
+const dist = (m, a, b) => m.distances?.[a]?.[b] ?? Infinity;
 
 /**
  * Matrix index for a stop. NEVER fall back to its position in the sequence —
@@ -113,8 +145,11 @@ const dist = (m, a, b) => m.distances?.[a]?.[b] ?? 0;
 const MI = (m, stops, i) => {
   const s = stops[i];
   if (Number.isFinite(s.mi)) return s.mi;
-  if (typeof m.mi === 'function') return m.mi(s);
-  return i;
+  if (typeof m.mi === 'function') {
+    const index = m.mi(s);
+    if (Number.isFinite(index)) return index;
+  }
+  throw new Error('Stop is missing its routing matrix index');
 };
 
 /** Total driving seconds for an ordered list of stop indices. */
@@ -283,9 +318,10 @@ export function plan(order, stops, m, { dayStart = DAY_START_MIN, dayEnd = DAY_E
  */
 export function comparisonOrder(order, unfitIdx, stops, m) {
   let out = [...order];
+  const lo = stops[out[0]]?.origin ? 1 : 0;
   for (const idx of unfitIdx) {
     let best = { pos: out.length, cost: Infinity };
-    for (let pos = 0; pos <= out.length; pos++) {
+    for (let pos = lo; pos <= out.length; pos++) {
       const cand = [...out.slice(0, pos), idx, ...out.slice(pos)];
       const cost = driveTime(cand, stops, m);
       if (cost < best.cost) best = { pos, cost };
@@ -300,9 +336,7 @@ export async function fetchGeometry(pts) {
   if (pts.length < 2) return null;
   try {
     const url = `${OSRM}/route/v1/driving/${coordList(pts)}?overview=full&geometries=geojson&annotations=false`;
-    const res = await queued(() => fetch(url));
-    if (!res.ok) throw new Error(String(res.status));
-    const json = await res.json();
+    const json = await queued(() => getJSON(url));
     if (json.code !== 'Ok' || !json.routes?.length) throw new Error(json.code || 'no route');
     const r = json.routes[0];
     return {

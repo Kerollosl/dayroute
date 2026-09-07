@@ -1,3 +1,5 @@
 .DS_Store
 node_modules/
 .impeccable/review/
+.playwright-cli/
+output/playwright/

@@ -167,6 +167,8 @@ code { font-family: var(--font-mono); font-size: .92em; }
 .brand { display: flex; align-items: center; gap: var(--space-2); flex: none; }
 .brand-mark { width: 26px; height: 26px; color: var(--accent); flex: none; }
 .brand-name {
+  /* It is the document's h1 now; the UA margin is not wanted. */
+  margin: 0;
   font-size: var(--fs-6); font-weight: 600; line-height: var(--lh-tight);
   letter-spacing: -.021em; color: var(--text);
 }
@@ -188,6 +190,7 @@ code { font-family: var(--font-mono); font-size: .92em; }
 .daynav-btn svg { width: 16px; height: 16px; }
 .daynav-btn:hover { background: var(--surface); }
 .daynav-date {
+  position: relative; text-align: center;
   font-size: var(--fs-3); font-weight: 590; line-height: var(--lh-label);
   letter-spacing: -.005em;
   padding: var(--space-2) var(--space-1);
@@ -195,9 +198,16 @@ code { font-family: var(--font-mono); font-size: .92em; }
   background: var(--surface); box-shadow: var(--shadow-1);
   color: var(--text);
 }
+.daynav-date input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.daynav-date:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+.view-switch { display: none; }
+.search-message { padding: var(--space-3); color: var(--text-2); }
+.search-hit.is-highlighted { background: var(--accent-wash); }
+.siding-edit { min-width: 0; padding: 0; text-align: left; }
+.local-note { display: block; font-size: var(--fs-1); color: var(--text-3); margin-top: var(--space-1); }
 .daynav-today {
   font-size: var(--fs-2); font-weight: 500; line-height: var(--lh-label);
-  color: var(--accent); padding: 0 var(--space-2); border-radius: var(--r-sm);
+  color: var(--accent-hover); padding: 0 var(--space-2); border-radius: var(--r-sm);
   transition: background var(--t-fast) var(--ease);
 }
 .daynav-today:hover { background: var(--accent-wash); }
@@ -296,7 +306,11 @@ code { font-family: var(--font-mono); font-size: .92em; }
 
 /* Tonal fill — Material's secondary weight, and the right home for an action
    that is important but not the one the screen is about. */
-.btn--tonal { background: var(--accent-wash); color: var(--accent); }
+/* --accent is legal on white and on --bg, which is all DESIGN.md's table ever
+   modelled. On its OWN tonal fill it measured 4.38:1 — under the product's 4.5
+   floor, on a primary action. --accent-hover is an existing token, not a second
+   green, and lands 6.38:1 here. Every accent-on-tint pairing uses it. */
+.btn--tonal { background: var(--accent-wash); color: var(--accent-hover); }
 .btn--tonal:hover:not(:disabled) { background: var(--accent-tint); }
 .btn--tonal.is-ready { background: var(--accent); color: var(--on-accent); box-shadow: var(--shadow-1); }
 .btn--tonal.is-ready:hover:not(:disabled) { background: var(--accent-hover); }
@@ -309,11 +323,16 @@ code { font-family: var(--font-mono); font-size: .92em; }
 
 .btn--wide { width: 100%; }
 
+/* A standing external limit — always true, never a fault, and it never
+   dismisses. It sat in --danger-wash, which spends the danger reserve on a
+   permanent fixture and leaves nothing louder for a real failure. A neutral
+   card with a hairline reads as a footnote, which is what it is. */
 .rail-note {
   font-size: var(--fs-2); font-weight: 400; line-height: var(--lh-read);
   color: var(--text-2);
   padding: var(--space-2) var(--space-3);
-  background: var(--danger-wash);
+  background: var(--surface);
+  border: var(--hair) solid var(--sep);
   border-radius: var(--r-md);
   flex: none;
 }
@@ -330,19 +349,24 @@ code { font-family: var(--font-mono); font-size: .92em; }
 
 /* --------------------------------------------------------- pane headings -- */
 .pane-head {
-  display: flex; align-items: center; justify-content: space-between; gap: var(--space-3);
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3);
   padding: var(--space-3) var(--pad);
   border-bottom: var(--hair) solid var(--sep);
   background: var(--surface);
   flex: none;
 }
+.pane-head > .legend { flex-basis: 100%; }
+.pane-head > .legend:empty { display: none; }
 .pane-title {
   font-size: var(--fs-4); font-weight: 600; line-height: var(--lh-label);
   letter-spacing: -.014em; color: var(--text);
 }
 .pane-count {
   font-variant-numeric: tabular-nums; font-size: var(--fs-2); font-weight: 500;
-  line-height: 1; color: var(--text-3);
+  /* text-3 is the floor on white and on --bg; on this tinted pill it measured
+     4.08:1. Same class of miss as .btn--tonal — a token verified against the
+     two flat grounds, then used on a fill. */
+  line-height: 1; color: var(--text-2);
   background: rgba(0, 0, 0, .06); border-radius: var(--r-pill);
   padding: 4px var(--space-2); min-width: 20px; text-align: center;
 }
@@ -368,6 +392,8 @@ code { font-family: var(--font-mono); font-size: .92em; }
 }
 .line-empty-title { font-size: var(--fs-4); font-weight: 590; color: var(--text-2); }
 .line-empty-body  { font-size: var(--fs-3); font-weight: 400; color: var(--text-3); max-width: 26ch; line-height: var(--lh-read); }
+.line-empty .btn { pointer-events: auto; margin-top: var(--space-4); }
+.line-pane.is-empty .line-grid { visibility: hidden; }
 
 /* FullCalendar, restyled.
    NOTE: never set `position` on .fc-v-event / info.el — FC sizes events by
@@ -405,10 +431,15 @@ code { font-family: var(--font-mono); font-size: .92em; }
 .fc .fc-col-header { display: none; }
 .fc .fc-timegrid-axis-cushion { display: none; }
 .fc-theme-standard td, .fc-theme-standard th { border-color: var(--sep-soft); }
-.fc .fc-timegrid-now-indicator-line { border-color: var(--danger); border-width: 1.5px; }
+/* "Now" is a time reference, not a fault. It was --danger, which collided head-on
+   with the legend's red "Won't fit" mark two inches above it: the only red on a
+   healthy day was an unlabelled rule under the last stop, and the one state red
+   exists to name rendered in ink. Neutral strong ink reads as a rule against the
+   grid's --sep-soft hairlines without ever claiming something is wrong. */
+.fc .fc-timegrid-now-indicator-line { border-color: var(--text-2); border-width: 1.5px; }
 .fc .fc-timegrid-now-indicator-line::after {
   content: ""; position: absolute; left: -4px; top: -3.5px;
-  width: 7px; height: 7px; border-radius: 50%; background: var(--danger);
+  width: 7px; height: 7px; border-radius: 50%; background: var(--text-2);
 }
 .fc .fc-timegrid-now-indicator-arrow { display: none; }
 .fc .fc-highlight { background: var(--accent-wash); border-radius: var(--r-sm); }
@@ -431,6 +462,13 @@ code { font-family: var(--font-mono); font-size: .92em; }
 .fc .fc-v-event.is-selected { box-shadow: var(--shadow-2); }
 .fc .fc-v-event.is-multiselected { box-shadow: 0 0 0 2px var(--accent), var(--shadow-1); }
 
+/* The one state the legend's red mark exists to explain. It previously tinted
+   the name alone, which is invisible against a black "Fixed" badge beside it —
+   and it only ever applied after Optimize ran. Now the whole card carries it. */
+.fc .fc-v-event.is-unfit {
+  background: var(--danger-wash);
+  box-shadow: inset 0 0 0 var(--hair) var(--danger-edge), var(--shadow-1);
+}
 .fc .fc-v-event.is-unfit .ev-name { color: var(--danger); }
 .fc .fc-v-event.is-nogeo .ev-name { color: var(--text-2); }
 
@@ -441,7 +479,13 @@ code { font-family: var(--font-mono); font-size: .92em; }
 }
 
 .ev { display: flex; flex-direction: column; gap: 3px; height: 100%; min-height: 0; }
-.ev-top { display: flex; align-items: baseline; gap: var(--space-2); }
+/* .ev is a flex COLUMN at height:100%, so this row was shrinkable and collapsed
+   to a single 19px line whenever the card was shorter than its content — which
+   silently defeated the name's two-line clamp (measured scrollHeight 38 in a
+   19px box). The row holds the name and never yields; .ev-meta is the part
+   that gives way, and the container queries below drop it outright when the
+   card is genuinely too short. */
+.ev-top { display: flex; align-items: baseline; gap: var(--space-2); flex: none; }
 .ev-drive {
   margin-left: auto; padding-left: var(--space-2); flex: none;
   font-size: var(--fs-2); font-weight: 500;
@@ -463,7 +507,13 @@ code { font-family: var(--font-mono); font-size: .92em; }
 .ev-name {
   font-weight: 590; font-size: var(--fs-4); line-height: var(--lh-label);
   letter-spacing: -.012em; color: var(--text);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  /* Was nowrap+ellipsis, which clipped "Parent-teacher confer…" sideways inside
+     a 100px-tall card holding 70px of empty white. The card is sized by dwell,
+     so tall cards have room the name was forbidden to use. Two lines maximum:
+     enough for a real appointment name, never enough to crowd out the address.
+     Short cards still clip, via the container query below. */
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+  overflow: hidden; overflow-wrap: break-word;
   /* The name identifies the stop; it must survive before anything else in the
      row does. A squeezed side-by-side column can otherwise let seq+badge+drive
      consume the whole width and leave the name at 0px — measured, not
@@ -472,9 +522,22 @@ code { font-family: var(--font-mono); font-size: .92em; }
   min-width: 32px;
 }
 .ev-meta {
+  display: flex; align-items: baseline; gap: var(--space-2);
   font-size: var(--fs-2); font-weight: 400; line-height: var(--lh-label);
   color: var(--text-3); font-variant-numeric: tabular-nums;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  white-space: nowrap; overflow: hidden;
+  min-width: 0;
+}
+/* The clock figure never truncates; the address yields first. */
+.ev-when { flex: none; font-weight: 500; color: var(--text-2); }
+.ev-when + .ev-addr::before { content: "·"; margin-right: var(--space-2); color: var(--text-3); }
+.ev-addr { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@container ev (max-width: 220px) {
+  .ev-addr { display: none; }
+}
+@container ev (max-height: 62px) {
+  /* Not enough height for a second name line without eating the address. */
+  .ev-name { -webkit-line-clamp: 1; }
 }
 @container ev (max-height: 34px) {
   .ev-meta { display: none; }
@@ -490,6 +553,11 @@ code { font-family: var(--font-mono); font-size: .92em; }
 }
 .ev-badge--pin  { background: rgba(0, 0, 0, .07); color: var(--text-2); }
 .ev-badge--unfit{ background: var(--danger-wash); color: var(--danger); }
+.ev-badge--action {
+  cursor: pointer; border: var(--hair) solid var(--danger-edge);
+  transition: background var(--t-fast) var(--ease);
+}
+.ev-badge--action:hover { background: var(--danger); color: var(--on-accent); }
 
 /* ---------------------------------------------------------- unscheduled -- */
 /* Lives in the rail now. It shared the schedule's column before, which halved
@@ -545,7 +613,7 @@ code { font-family: var(--font-mono); font-size: .92em; }
   padding-right: 2px;
 }
 .siding {
-  display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: var(--space-2);
+  display: grid; grid-template-columns: auto 1fr auto auto; align-items: center; gap: var(--space-2);
   padding: 10px var(--space-2) 10px var(--space-3);
   background: var(--surface);
   border-radius: var(--r-md);
@@ -579,6 +647,16 @@ code { font-family: var(--font-mono); font-size: .92em; }
   transition: background var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
 }
 .siding-x:hover { background: var(--danger-wash); color: var(--danger); }
+
+/* Schedule this stop into the first gap that holds it. Constructive, so it
+   takes the accent on hover where the adjacent destructive control takes red. */
+.siding-add {
+  color: var(--text-3); line-height: 0; padding: 6px;
+  border-radius: 50%;
+  transition: background var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
+}
+.siding-add svg { width: 16px; height: 16px; display: block; }
+.siding-add:hover { background: var(--accent-wash); color: var(--accent-hover); }
 
 .tray-empty {
   padding: var(--space-5) var(--space-3); text-align: center;
@@ -642,6 +720,7 @@ code { font-family: var(--font-mono); font-size: .92em; }
   pointer-events: none;
 }
 .pin:hover .pin-label, .pin.is-hover .pin-label, .pin.is-active .pin-label { opacity: 1; transform: translateY(0); }
+.pin:focus-visible .pin-label { opacity: 1; transform: translateY(0); }
 
 /* The starting point: a bearing dot, the shape every maps app uses for "you".
    Deliberately not a numbered badge — it is not one of the stops. */
@@ -714,6 +793,11 @@ code { font-family: var(--font-mono); font-size: .92em; }
 .field-note[data-state="ok"]  { color: var(--accent); }
 .field-note[data-state="bad"] { color: var(--danger); }
 .sheet-actions { display: flex; gap: var(--space-2); justify-content: flex-end; align-items: center; }
+.maps-legs { display: flex; flex-direction: column; gap: var(--space-2); }
+.maps-leg { display: flex; flex-direction: column; gap: var(--space-1); padding: var(--space-3); border-radius: var(--r-md); background: var(--accent-wash); color: var(--accent-hover); text-decoration: none; overflow-wrap: anywhere; }
+.maps-leg:hover { background: var(--accent-tint); }
+.maps-leg span { font-size: var(--fs-2); }
+input, textarea { caret-color: var(--accent); }
 
 /* --------------------------------------------------------------- toasts -- */
 .toast-stack {
@@ -739,21 +823,80 @@ code { font-family: var(--font-mono); font-size: .92em; }
 
 @media (max-width: 900px) {
   body { overflow: auto; }
+  /* PRODUCT.md: the phone is the CONSUMPTION device — read in a car, about to
+     pull out. Stacking rail/line/map put the whole authoring apparatus first:
+     measured, the schedule began at exactly one full screen down (844px) and
+     the map at ~2.5 screens, on a 2507px page. The day itself was below the
+     fold on the device the day is read on.
+
+     `display: contents` dissolves the rail so its children place directly on
+     the page grid and can be ordered independently — no DOM change, and the
+     desktop three-column layout is untouched. Order is now the drive moment:
+     where am I going (date, totals), then the day, then the map, and only then
+     the tools for changing it. */
   .app {
     grid-template-columns: 1fr;
-    grid-template-rows: auto auto 46dvh;
-    grid-template-areas: "rail" "line" "map";
+    grid-template-rows: none;
+    grid-template-areas: none;
     height: auto; min-height: 100dvh;
+    row-gap: var(--space-4);
+    padding: var(--space-4) 0 var(--space-3);
+    background: var(--bg);
   }
-  .rail, .line-pane { border-right: 0; border-bottom: var(--hair) solid var(--sep); }
-  .rail { overflow: visible; }
+  /* The panes keep `grid-area: line|map` from the desktop rule. With the named
+     areas gone those idents resolve as implicit LINE names, which makes Chrome
+     mint implicit columns — measured 3 tracks on a 390px viewport. Placement
+     has to be handed back to auto explicitly. */
+  .rail, .line-pane, .map-pane { grid-area: auto; }
+  .rail { display: contents; }
+  .rail > * { margin-inline: var(--space-4); }
+  /* `display: contents` removes the box, not the DOM node, so the rail's
+     children are still DOM children of .rail — `.app > .brand` matches
+     nothing. They become grid ITEMS of .app while staying DOM children here. */
+  .rail > .brand        { order: 1; }
+  .rail > .daynav       { order: 2; }
+  .rail > .origin       { order: 3; width: auto; }
+  .rail > .totals       { order: 4; }
+  .rail > .delta        { order: 5; }
+  .rail > .rail-actions { order: 6; }
+  .rail > .rail-note    { order: 7; }
+  .view-switch          { order: 8; }
+  .line-pane            { order: 9; }
+  .map-pane             { order: 9; }
+  .rail > .tray         { order: 9; }
+  .rail > .rail-foot    { order: 11; }
+  .view-switch {
+    display: flex; gap: 4px; position: sticky; top: 0; z-index: 10;
+    background: var(--bg); padding: var(--space-2) var(--space-4);
+    border-bottom: var(--hair) solid var(--sep); margin-bottom: calc(-1 * var(--space-4));
+  }
+  .view-switch button { flex: 1; min-height: 44px; color: var(--text-2); border-radius: var(--r-md); font-weight: 500; }
+  .view-switch button[aria-pressed="true"] { background: var(--surface); color: var(--accent-hover); box-shadow: var(--shadow-1); }
+  .view-switch span { font-size: var(--fs-2); margin-left: 4px; }
+  .app:not([data-view="schedule"]) .line-pane,
+  .app:not([data-view="map"]) .map-pane,
+  .app:not([data-view="places"]) .tray { display: none; }
+  .rail-actions { display: grid; grid-template-columns: 1fr 1.4fr; gap: var(--space-2); }
+  .rail-actions--split { display: grid; grid-template-columns: 1fr auto; gap: var(--space-1); }
+  .rail-actions .btn { padding-inline: var(--space-2); min-height: 44px; }
+  .line-pane.is-empty .line-body { height: 300px; overflow: hidden; }
+  .daynav-date, .daynav-btn, .daynav-today { min-height: 40px; }
+  .sheet textarea, .field input, .search input { font-size: 16px; }
+  .sheet .btn { min-height: 44px; }
+  .sheet { max-height: calc(100dvh - 32px); }
+  .line-pane { border-right: 0; }
+  .line-pane, .map-pane {
+    border-block: var(--hair) solid var(--sep);
+    background: var(--surface);
+  }
   /* The grid expands to its content; the page owns the only scroll. */
   .line-body { position: relative; flex: none; }
   .line-grid { position: relative; inset: auto; }
   .fc .fc-scroller { overflow: visible !important; }
-  .tray { flex: none; }
+  .tray { flex: none; display: flex; flex-direction: column; gap: var(--space-3); }
   .tray-list { max-height: 46dvh; }
-  .map-pane { min-height: 280px; }
+  /* Tall enough to actually read the route, not a letterbox at the page end. */
+  .map-pane { min-height: 62dvh; }
 }
 
 /* Reduced motion means less movement, not no feedback: spatial travel and the
@@ -772,6 +915,13 @@ code { font-family: var(--font-mono); font-size: .92em; }
    sizes here measure 27-34px, which is fine for a mouse and not for a thumb.
    Keyed on the pointer, not the viewport — a small window on a laptop is still
    a mouse, and a large tablet is still a finger. */
+.maplibregl-ctrl-group button:focus,
+.maplibregl-ctrl-group button:focus-visible {
+  box-shadow: none;
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
 @media (pointer: coarse) {
   .btn { min-height: 44px; }
   .daynav { grid-template-columns: 44px 1fr 44px auto; }
@@ -782,5 +932,7 @@ code { font-family: var(--font-mono); font-size: .92em; }
   .siding { padding-block: var(--space-3); }
   /* Destructive, so it gets a full target rather than a padded glyph. */
   .siding-x { min-width: 44px; min-height: 44px; padding: 0; display: grid; place-items: center; }
+  .siding-add { min-width: 44px; min-height: 44px; padding: 0; display: grid; place-items: center; }
+  .ev-badge--action { min-height: 32px; padding-inline: var(--space-3); display: inline-flex; align-items: center; }
   .maplibregl-ctrl-group button { width: 40px !important; height: 40px !important; }
 }

@@ -11,6 +11,15 @@
         ],
         "createdAt": "2026-09-05T05:19:58.466Z",
         "reason": "user confirmed: explicitly asked for a white/off-white ground with green and a complementary colour. Warm oat also serves the printed-transit-diagram world — a cool grey-white would read clinical rather than as paper stock. Scoped to index.html, where the ground is declared."
+      },
+      {
+        "rule": "cramped-padding",
+        "value": "*",
+        "files": [
+          "index.html"
+        ],
+        "createdAt": "2026-09-07T02:37:38.259Z",
+        "reason": "The map pane is a full-bleed MapLibre canvas: padding would inset the map inside its own pane and break the 'map is its own surface' rule in DESIGN.md. No text-bearing child exists to be cramped."
       }
     ]
   }

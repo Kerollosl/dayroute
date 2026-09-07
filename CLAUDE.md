@@ -155,6 +155,26 @@ nothing while the finding keeps firing. Scope a wildcard to a file instead
 (`ignore-value <rule> "*" --file <glob>`), and always re-run the detector to
 confirm the count actually dropped.
 
+**`display: contents` does not change the DOM tree.** The mobile layout dissolves
+`.rail` so its children order independently on the page grid. They become grid
+*items* of `.app` while staying DOM *children* of `.rail`, so `.app > .brand`
+matches nothing and every `order` silently does nothing — the page renders in
+source order and looks untouched. Select them as `.rail > .brand`.
+
+**Clear `grid-area` when you clear `grid-template-areas`.** `.line-pane` and
+`.map-pane` carry `grid-area: line|map` from the desktop rule. With the named
+areas gone those idents resolve as implicit grid *line* names, and Chrome mints
+implicit columns to satisfy them — measured three tracks on a 390px viewport,
+with the schedule rendered in a 102px column. `grid-area: auto` in the media
+query is what hands placement back.
+
+**A flex column at `height: 100%` shrinks its rows.** `.ev-top` holds the stop
+name; because `.ev` is `flex-direction: column; height: 100%`, the row was
+shrinkable and collapsed to one 19px line whenever the card was shorter than its
+content. The two-line clamp still *reported* `line-clamp: 2` while the box was
+one line tall — `scrollHeight` 38 in a 19px box is the tell. Any row that must
+not lose a line needs `flex: none`.
+
 ## Optimiser contract
 
 `optimize(stops, matrix)` — stops carry `{lat,lng,dwell,pinned,startMin,mi}` where
