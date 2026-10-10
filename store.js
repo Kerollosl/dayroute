@@ -89,7 +89,9 @@ export class Store extends EventTarget {
   load() {
     try {
       const raw = localStorage.getItem(KEY);
-      this.state = migrate(raw ? JSON.parse(raw) : null);
+      const decoded = raw ? JSON.parse(raw) : null;
+      if(raw && (!decoded || !Array.isArray(decoded.stops) || !decoded.stops.every(s=>s && typeof s === "object" && !Array.isArray(s)))) throw new Error("Invalid saved day schema");
+      this.state = migrate(decoded);
     } catch (error) {
       this.loadError = "Saved day could not be read. Export the recovery data before replacing it.";
       try { this.recoveryData = localStorage.getItem(KEY); } catch {}

@@ -161,3 +161,11 @@ test('portable export roundtrip and malformed import retain original state', asy
  const before=b.exportJSON(); assert.throws(()=>b.importJSON('{broken'));
  assert.equal(b.exportJSON(),before);
 });
+
+
+test('valid JSON with invalid saved schema is retained for recovery', async () => {
+ const raw='{"stops":"corrupted"}';localStorage.setItem('dayroute.v1',raw);
+ const {Store}=await fresh('store');const s=new Store();
+ assert.equal(s.exportJSON(),raw);assert.ok(s.loadError);
+ s.add({name:'Temporary'});assert.equal(localStorage.getItem('dayroute.v1'),raw);
+});
