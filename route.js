@@ -6,7 +6,7 @@
 // be reached on time. A stop with nowhere feasible to go is reported unfit —
 // never quietly dropped, never quietly reordered past an appointment.
 
-const OSRM = 'https://router.project-osrm.org';
+const OSRM = globalThis.DAYROUTE_PROVIDERS?.osrm || 'https://router.project-osrm.org';
 const MIN_GAP_MS = 1050;
 const REQUEST_TIMEOUT_MS = 10000;
 const DAY_START_MIN = 8 * 60;
@@ -351,3 +351,4 @@ export async function fetchGeometry(pts) {
 }
 
 export { DAY_START_MIN, DAY_END_MIN };
+

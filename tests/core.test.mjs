@@ -150,3 +150,14 @@ test('one stop hands off as a destination without inventing an origin', async ()
   assert.equal(q.has('origin'), false); assert.ok(q.get('destination'));
   assert.deepEqual(g.buildLinks([]), []);
 });
+
+
+
+test('portable export roundtrip and malformed import retain original state', async () => {
+ const {Store}=await fresh('store');
+ const a=new Store(); a.add({name:'Backup stop',address:'123 Example St'});
+ const text=a.exportJSON(); const b=new Store(); b.importJSON(text);
+ assert.equal(b.stops[0].name,'Backup stop');
+ const before=b.exportJSON(); assert.throws(()=>b.importJSON('{broken'));
+ assert.equal(b.exportJSON(),before);
+});

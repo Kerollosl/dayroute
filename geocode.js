@@ -7,8 +7,8 @@
 const CACHE_KEY = 'dayroute.geocache.v1';
 const MIN_GAP_MS = 1100;
 const REQUEST_TIMEOUT_MS = 8000;
-const PHOTON = 'https://photon.komoot.io/api/';
-const NOMINATIM = 'https://nominatim.openstreetmap.org/search';
+const PHOTON = globalThis.DAYROUTE_PROVIDERS?.photon || 'https://photon.komoot.io/api/';
+const NOMINATIM = globalThis.DAYROUTE_PROVIDERS?.nominatim || 'https://nominatim.openstreetmap.org/search';
 
 const norm = (q) => String(q || '').trim().toLowerCase().replace(/\s+/g, ' ');
 const validPoint = (p) => p && Number.isFinite(p.lat) && Number.isFinite(p.lng)
