@@ -90,12 +90,25 @@ export class Store extends EventTarget {
     try {
       const raw = localStorage.getItem(KEY);
       this.state = migrate(raw ? JSON.parse(raw) : null);
-    } catch {
+    } catch (error) {
+      this.loadError = "Saved day could not be read. Export the recovery data before replacing it.";
+      try { this.recoveryData = localStorage.getItem(KEY); } catch {}
       this.state = blank();
     }
   }
 
+  exportJSON() { return this.recoveryData || JSON.stringify({version:1,...this.state},null,2); }
+
+  importJSON(text) {
+    if (text.length > 2_000_000) throw new Error("Day file is too large");
+    const raw = JSON.parse(text);
+    if (!raw || !Array.isArray(raw.stops) || raw.stops.length > 1000 || !raw.stops.every(s=>s && typeof s === "object")) throw new Error("Invalid day file");
+    if (raw.version && raw.version !== 1) throw new Error("Unsupported day file version");
+    this.checkpoint(); this.state=migrate(raw); this.recoveryData=null; this.loadError=null; this.commit();
+  }
+
   save() {
+    if (this.recoveryData) { this.saveFailed=true; return; }
     try {
       localStorage.setItem(KEY, JSON.stringify(this.state));
       this.saveFailed = false;
@@ -245,3 +258,4 @@ export class Store extends EventTarget {
   schedule(id, day, start) { return this.update(id, { day, start }); }
   unschedule(id) { return this.update(id, { day: null, start: null }); }
 }
+

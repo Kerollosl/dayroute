@@ -87,3 +87,8 @@ git push -u origin main
 ```
 
 On the phone, open the Pages URL and add it to the home screen.
+
+
+## Cleanup behavior and validation limits
+
+Use Export day / Import day for portable JSON backups. Malformed saved data is retained for recovery rather than overwritten. Named-place resolution accepts location context. Public Photon/Nominatim/OSRM services remain courtesy dependencies with availability/rate limits; live API reliability is not guaranteed.

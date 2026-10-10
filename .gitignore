@@ -3,3 +3,20 @@ node_modules/
 .impeccable/review/
 .playwright-cli/
 output/playwright/
+
+
+# Local credentials, caches and generated outputs
+.env
+.env.*
+!.env.example
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+node_modules/
+playwright-report/
+*.cookies.json
+.auth/
+.ipynb_checkpoints/
+.idea/
+.DS_Store

@@ -936,3 +936,4 @@ input, textarea { caret-color: var(--accent); }
   .ev-badge--action { min-height: 32px; padding-inline: var(--space-3); display: inline-flex; align-items: center; }
   .maplibregl-ctrl-group button { width: 40px !important; height: 40px !important; }
 }
+

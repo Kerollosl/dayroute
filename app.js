@@ -778,7 +778,7 @@ els.originForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   els.originNote.dataset.state = '';
   els.originNote.textContent = 'Finding that address…';
-  const hit = await geo.resolve(typed);
+  const hit = await geo.resolve(typed, {near:map.center?.() || store.origin});
   if (!hit) {
     els.originNote.dataset.state = 'bad';
     els.originNote.textContent = 'Could not find that address. Try picking one of the suggestions, or add the city and state.';
@@ -940,7 +940,7 @@ els.stopForm.addEventListener('submit', (e) => {
 });
 
 async function locateStop(id, address) {
-  const hit = await geo.resolve(address);
+  const hit = await geo.resolve(address, {near:map.center?.() || store.origin});
   const current = store.byId(id);
   if (!current || current.address !== address) return;
   store.update(id, hit
@@ -1077,3 +1077,17 @@ tray.geocodePending();
 // Offer the current location as the starting point, once, without blocking
 // startup. Refusal is fine: the app then behaves exactly as it did before.
 seedOriginFromGeolocation();
+
+
+// Portable backup is explicit; importing checkpoints the current day for Undo.
+document.getElementById('btnExportDay').addEventListener('click',()=>{
+ const url=URL.createObjectURL(new Blob([store.exportJSON()],{type:'application/json'}));
+ const a=document.createElement('a');a.href=url;a.download=`dayroute-${store.state.day}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+});
+document.getElementById('btnImportDay').addEventListener('click',()=>document.getElementById('importDay').click());
+document.getElementById('importDay').addEventListener('change',async e=>{
+ const file=e.target.files[0];if(!file)return;
+ try{store.importJSON(await file.text());toast('Day imported. Undo restores your previous day.');}catch(error){toast(error.message,'warn');}
+ e.target.value='';
+});
+if(store.loadError)toast(store.loadError,'warn');

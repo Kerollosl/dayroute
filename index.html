@@ -118,6 +118,9 @@ DESIGN.md, and every shipping raster carrying its provenance.
     <footer class="rail-foot">
       <span class="status" id="netStatus" role="status"><i class="status-dot"></i><span id="netStatusText">Ready</span></span>
       <button class="btn btn--ghost" type="button" id="btnRetryRoute" hidden>Retry routing</button>
+      <button type="button" class="btn btn--ghost" id="btnExportDay">Export day</button>
+      <button type="button" class="btn btn--ghost" id="btnImportDay">Import day</button>
+      <input type="file" id="importDay" accept="application/json,.json" hidden>
       <span class="local-note">Saved on this browser</span>
     </footer>
   </aside>
@@ -224,3 +227,4 @@ DESIGN.md, and every shipping raster carrying its provenance.
 <script type="module" src="app.js"></script>
 </body>
 </html>
+

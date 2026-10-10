@@ -161,16 +161,17 @@ export async function search(query, { near = null, limit = 6, signal } = {}) {
  * service failures must be retryable when connectivity returns.
  * @returns {Promise<{lat:number,lng:number,label:string}|null>}
  */
-export async function resolve(address) {
+export async function resolve(address, {near=null}={}) {
   const q = norm(address);
   if (!q) return null;
-  if (cache.has(q)) return cache.get(q);
+  const key = validPoint(near) ? `${q}@${near.lat.toFixed(3)},${near.lng.toFixed(3)}` : q;
+  if (cache.has(key)) return cache.get(key);
 
   // Same provider routing as `search`: Photon ranks named features above street
   // addresses, so resolving "1500 wilson blvd arlington va" through it returned
   // a different street entirely. A house-number query goes to Nominatim first.
   const askPhoton = async () =>
-    fromPhoton(await queued(() => getJSON(`${PHOTON}?q=${encodeURIComponent(q)}&limit=1`)))[0] || null;
+    fromPhoton(await queued(() => getJSON(`${PHOTON}?q=${encodeURIComponent(q)}&limit=1${validPoint(near)?`&lat=${near.lat}&lon=${near.lng}`:""}`)))[0] || null;
   const askNominatim = async () =>
     fromNominatim(await queued(() => getJSON(`${NOMINATIM}?format=jsonv2&addressdetails=1&limit=1&q=${encodeURIComponent(q)}`)))[0] || null;
 
@@ -184,7 +185,7 @@ export async function resolve(address) {
 
   const value = hit ? { lat: hit.lat, lng: hit.lng, label: hit.label || hit.name } : null;
   if (value) {
-    cache.set(q, value);
+    cache.set(key, value);
     persist();
   }
   return value;
@@ -224,3 +225,4 @@ export async function resolveAll(addresses, onEach) {
   }
   return out;
 }
+
