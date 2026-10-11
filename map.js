@@ -26,6 +26,7 @@ const WATER  = { r: 0xC9, g: 0xDE, b: 0xEC };
 const WATER_LO = { r: 0xA9, g: 0xC6, b: 0xDA };
 
 const ROUTE_SRC = 'dr-route';
+const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)');
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 const mix = (a, b, t) => ({
   r: Math.round(a.r + (b.r - a.r) * t),
@@ -124,12 +125,14 @@ function tintStyle(style) {
 }
 
 export class RouteMap {
-  constructor(container, { onPinClick } = {}) {
+  constructor(container, { onPinClick, onPinHover } = {}) {
     this.el = typeof container === 'string' ? document.getElementById(container) : container;
     this.onPinClick = onPinClick;
+    this.onPinHover = onPinHover;
     this.markers = [];
     this.map = null;
     this.ok = false;
+    this.activeId = null;
     this.ready = this._init().catch((err) => { console.warn('map unavailable:', err); return null; });
   }
 
@@ -193,7 +196,7 @@ export class RouteMap {
   }
 
   /** Draw the ordered stations. Index is the position in the day. */
-  setStops(stops, { activeId = null } = {}) {
+  setStops(stops, { activeId = this.activeId } = {}) {
     if (!this.map) return;
     for (const m of this.markers) m.remove();
     this.markers = [];
@@ -237,6 +240,12 @@ export class RouteMap {
       name.textContent = s.name || s.address || '';
       el.append(name, tick, stem);
       el.addEventListener('click', (e) => { e.stopPropagation(); this.onPinClick?.(s.id); });
+      el.addEventListener('mouseenter', () => this.onPinHover?.(s.id));
+      el.addEventListener('mouseleave', () => {
+        if (document.activeElement !== el) this.onPinHover?.(null);
+      });
+      el.addEventListener('focus', () => this.onPinHover?.(s.id));
+      el.addEventListener('blur', () => this.onPinHover?.(null));
       el.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault(); e.stopPropagation(); this.onPinClick?.(s.id);
@@ -244,12 +253,12 @@ export class RouteMap {
       });
       this.markers.push(new maplibregl.Marker({ element: el, anchor: 'bottom' }).setLngLat([s.lng, s.lat]).addTo(this.map));
     });
+    this.setActive(activeId);
   }
 
   /** Advance the drawn portion of the route from 0 to 1. */
   _drawOn(ms = 720) {
     cancelAnimationFrame(this._drawRaf);
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const paint = (p) => {
       if (!this.map?.getLayer('dr-route-ink')) return;
       const clear = 'rgba(14,122,70,0)';
@@ -261,7 +270,7 @@ export class RouteMap {
         : ['interpolate', ['linear'], ['line-progress'],
             0, ROUTE_INK, q, ROUTE_INK, q + d, clear, 1, clear]);
     };
-    if (reduced) { paint(1); return; }
+    if (REDUCED.matches) { paint(1); return; }
     const t0 = performance.now();
     const step = (now) => {
       const k = Math.min(1, (now - t0) / ms);
@@ -277,6 +286,24 @@ export class RouteMap {
       const el = m.getElement();
       el.classList.toggle('is-hover', !!id && el.dataset.stopId === id);
     }
+  }
+
+  /** Persist one map/schedule counterpart without rebuilding every marker. */
+  setActive(id) {
+    this.activeId = id || null;
+    let found = false;
+    for (const m of this.markers) {
+      const el = m.getElement();
+      const active = !!id && el.dataset.stopId === id;
+      el.classList.toggle('is-active', active);
+      if (active) {
+        found = true;
+        el.setAttribute('aria-current', 'location');
+      } else {
+        el.removeAttribute('aria-current');
+      }
+    }
+    this.el.closest('.map-pane')?.classList.toggle('has-active', found);
   }
 
   /** Road geometry when OSRM answered; a straight diagram line when it did not. */
@@ -300,12 +327,12 @@ export class RouteMap {
     // produces an invalid camera; wait until the map becomes visible.
     if (!this.el.clientWidth || !this.el.clientHeight) { this._pendingFit = pts; return; }
     this._pendingFit = null;
-    if (pts.length === 1) { this.map.easeTo({ center: [pts[0].lng, pts[0].lat], zoom: 12.5, duration: 500 }); return; }
+    if (pts.length === 1) { this.map.easeTo({ center: [pts[0].lng, pts[0].lat], zoom: 12.5, duration: REDUCED.matches ? 0 : 500 }); return; }
     const b = new maplibregl.LngLatBounds();
     for (const p of pts) b.extend([p.lng, p.lat]);
     // Explicit per-side padding, never a bare number: the rail and tray overlap
     // the viewport edges and a symmetric pad would hide the first stop.
-    this.map.fitBounds(b, { padding: { top: 70, right: 70, bottom: 90, left: 70 }, maxZoom: 14.5, duration: 600 });
+    this.map.fitBounds(b, { padding: { top: 70, right: 70, bottom: 90, left: 70 }, maxZoom: 14.5, duration: REDUCED.matches ? 0 : 600 });
   }
 
   center() {
@@ -316,12 +343,38 @@ export class RouteMap {
 
   flyTo(stop) {
     if (!this.map || !Number.isFinite(stop?.lat)) return;
-    this.map.easeTo({ center: [stop.lng, stop.lat], zoom: Math.max(this.map.getZoom(), 13), duration: 500 });
+    this.map.easeTo({ center: [stop.lng, stop.lat], zoom: Math.max(this.map.getZoom(), 13), duration: REDUCED.matches ? 0 : 500 });
+  }
+
+  /** Pan only when the selected stop is outside a comfortable viewport inset. */
+  reveal(stop) {
+    if (!this.map || !Number.isFinite(stop?.lat) || !Number.isFinite(stop?.lng)) return;
+    if (!this.el.clientWidth || !this.el.clientHeight) { this._pendingReveal = stop; return; }
+    if (this.map.isMoving?.()) {
+      this._pendingReveal = stop;
+      if (!this._revealQueued) {
+        this._revealQueued = true;
+        this.map.once('moveend', () => {
+          this._revealQueued = false;
+          const pending = this._pendingReveal;
+          if (pending) this.reveal(pending);
+        });
+      }
+      return;
+    }
+    this._pendingReveal = null;
+    const p = this.map.project([stop.lng, stop.lat]);
+    const insetX = Math.min(104, Math.max(52, this.el.clientWidth * .24));
+    const insetY = Math.min(80, Math.max(52, this.el.clientHeight * .14));
+    const inside = p.x >= insetX && p.x <= this.el.clientWidth - insetX
+      && p.y >= insetY && p.y <= this.el.clientHeight - insetY;
+    if (!inside) this.flyTo(stop);
   }
 
   resize() {
     if (!this.el.clientWidth || !this.el.clientHeight) return;
     this.map?.resize();
     if (this._pendingFit) this.fit(this._pendingFit);
+    if (this._pendingReveal) this.reveal(this._pendingReveal);
   }
 }

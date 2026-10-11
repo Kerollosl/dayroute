@@ -76,6 +76,52 @@ test('unknown matrix indices are rejected, not confused with the first stop', as
   assert.throws(() => r.plan([0,1], [{ dwell:30 }, { dwell:30 }], { durations:[[0]], distances:[[0]] }), /matrix index/);
 });
 
+test('late scheduled stops extend the day without hiding a truly late arrival', async () => {
+  const r = await fresh('route');
+  const stops = [
+    { id:'first', pinned:true, mi:0, startMin:19*60+10, dwell:45 },
+    { id:'late', pinned:true, mi:1, startMin:23*60, dwell:30 },
+  ];
+  const dayEnd = r.scheduledDayEnd(stops);
+  assert.equal(dayEnd, 23*60+30);
+
+  const feasible = { durations:[[0,9*60],[9*60,0]], distances:[[0,1000],[1000,0]] };
+  const onTime = r.plan([0,1], stops, feasible, { dayStart:19*60+10, dayEnd });
+  assert.equal(onTime.feasible, true);
+  assert.equal(onTime.lateId, null);
+
+  const impossible = { durations:[[0,200*60],[200*60,0]], distances:[[0,1000],[1000,0]] };
+  const arrivesLate = r.plan([0,1], stops, impossible, { dayStart:19*60+10, dayEnd });
+  assert.equal(arrivesLate.feasible, false);
+  assert.equal(arrivesLate.lateId, 'late');
+});
+
+test('the first inbound drive starts before the first card and preserves built-in gaps', async () => {
+  const r = await fresh('route');
+  const stops = [
+    { id:'origin', origin:true, pinned:true, mi:0, startMin:19*60+30, dwell:0 },
+    { id:'first', pinned:false, mi:1, startMin:19*60+30, dwell:45 },
+    { id:'second', pinned:false, mi:2, startMin:20*60+24, dwell:30 },
+  ];
+  const m = {
+    durations:[[0,5*60,14*60],[5*60,0,9*60],[14*60,9*60,0]],
+    distances:[[0,1000,2000],[1000,0,1000],[2000,1000,0]],
+  };
+  const dayStart = r.scheduledDayStart(stops, m);
+  const dayEnd = r.scheduledDayEnd(stops.filter((s) => !s.origin));
+  assert.equal(dayStart, 19*60+25);
+  assert.equal(dayEnd, 20*60+54);
+
+  const onTime = r.plan([0,1,2], stops, m, { dayStart, dayEnd });
+  assert.equal(onTime.feasible, true);
+  assert.deepEqual(onTime.times, [19*60+25, 19*60+30, 20*60+24]);
+  assert.equal(onTime.lateId, null);
+
+  const oldClock = r.plan([0,1,2], stops, m, { dayStart:19*60+30, dayEnd });
+  assert.equal(oldClock.feasible, false);
+  assert.equal(oldClock.lateId, 'second');
+});
+
 test('nested fixed appointments all show an overlap', async () => {
   const { Store } = await fresh('store');
   const s = new Store();
@@ -92,6 +138,33 @@ test('storage failure is exposed and Undo still works in the session', async () 
   s.add({ name:'Errand' });
   assert.equal(s.saveFailed, true);
   assert.equal(s.undo(), true); assert.equal(s.stops.length, 0);
+});
+
+test('move to now shifts scheduled stops together and keeps one undo step', async () => {
+  const { Store, nextQuarterHour } = await fresh('store');
+  const s = new Store();
+  assert.equal(nextQuarterHour(new Date(2026, 8, 11, 10, 7)), 615);
+  assert.equal(nextQuarterHour(new Date(2026, 8, 11, 10, 15, 1)), 630);
+  s.add({ id: 'first', day: s.day, start: '09:00', dwell: 30 });
+  s.add({ id: 'second', day: s.day, start: '10:10', dwell: 45 });
+
+  const result = s.shiftScheduled(s.day, 75);
+  assert.deepEqual(result, { count: 2, applied: 75, clamped: false });
+  assert.equal(s.byId('first').start, '10:15');
+  assert.equal(s.byId('second').start, '11:25');
+  assert.equal(s.undo(), true);
+  assert.equal(s.byId('first').start, '09:00');
+  assert.equal(s.byId('second').start, '10:10');
+});
+
+test('move to now clamps a late-day shift before midnight', async () => {
+  const { Store } = await fresh('store');
+  const s = new Store();
+  s.add({ id: 'late', day: s.day, start: '23:00', dwell: 30 });
+  const result = s.shiftScheduled(s.day, 120);
+  assert.equal(result.applied, 30);
+  assert.equal(result.clamped, true);
+  assert.equal(s.byId('late').start, '23:30');
 });
 
 test('failed geocoding is retryable and successful results are cached', async () => {

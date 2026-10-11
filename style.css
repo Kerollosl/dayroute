@@ -13,6 +13,7 @@
   --bg:         #F5F5F7;
   --surface:    #FFFFFF;
   --hover:      #F0F0F3;
+  --pressed:    #E8E8EC;
 
   /* Separators are hairlines in ink at low alpha, never a grey paint: they sit
      correctly on both the ground and a white card without a second token. */
@@ -34,10 +35,12 @@
   --accent-hover: #096540;
   --accent-wash:  rgba(11, 122, 75, .09);
   --accent-tint:  rgba(11, 122, 75, .16);
+  --accent-edge:  rgba(11, 122, 75, .32);
 
   /* Attention. Only ever a real fault: won't-fit, collision, failed lookup. */
   --danger:      #D93025;
   --danger-wash: rgba(217, 48, 37, .08);
+  --danger-edge: rgba(217, 48, 37, .32);
 
   --fixed: var(--text);        /* an appointment that cannot move */
   --on-accent: #FFFFFF;        /* text/glyphs on any saturated fill */
@@ -59,6 +62,7 @@
   --fs-5: 17px;  /* sub-head: dialog titles */
   --fs-6: 20px;  /* wordmark */
   --fs-7: 26px;  /* secondary figure */  /* lead figure */
+  --fs-8: 32px;  /* reserved lead figure */
 
   --lh-tight: 1.1;
   --lh-label: 1.25;
@@ -76,6 +80,7 @@
   --space-4: 16px;
   --space-5: 20px;
   --space-6: 24px;
+  --space-7: 32px;
   --pad: var(--space-4);
 
   /* Radius — one ramp, applied consistently. Both reference platforms round
@@ -133,6 +138,14 @@ button { background: none; border: 0; cursor: pointer; }
 h2, h3 { margin: 0; font-weight: 600; }
 p { margin: 0; }
 code { font-family: var(--font-mono); font-size: .92em; }
+
+.sr-only {
+  position: absolute !important;
+  width: 1px !important; height: 1px !important;
+  padding: 0 !important; margin: -1px !important;
+  overflow: hidden !important; clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important; border: 0 !important;
+}
 
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--r-sm); }
 
@@ -201,7 +214,6 @@ code { font-family: var(--font-mono); font-size: .92em; }
 .daynav-date input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
 .daynav-date:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
 .view-switch { display: none; }
-.search-message { padding: var(--space-3); color: var(--text-2); }
 .search-hit.is-highlighted { background: var(--accent-wash); }
 .siding-edit { min-width: 0; padding: 0; text-align: left; }
 .local-note { display: block; font-size: var(--fs-1); color: var(--text-3); margin-top: var(--space-1); }
@@ -278,7 +290,13 @@ code { font-family: var(--font-mono); font-size: .92em; }
 
 /* Buttons ----------------------------------------------------------------- */
 .rail-actions { display: flex; flex-direction: column; gap: var(--space-2); flex: none; }
-.rail-actions--split { display: grid; grid-template-columns: 1fr auto; gap: var(--space-2); }
+.rail-actions--split {
+  display: grid; grid-template-columns: 1fr auto; gap: var(--space-2);
+  animation: actions-in var(--t-base) var(--ease-out);
+}
+@keyframes actions-in {
+  from { opacity: 0; transform: translateY(-4px); clip-path: inset(0 0 25% 0 round var(--r-md)); }
+}
 
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2);
@@ -288,7 +306,8 @@ code { font-family: var(--font-mono); font-size: .92em; }
   border: 0; border-radius: var(--r-md);
   color: var(--text);
   transition: background var(--t-fast) var(--ease), color var(--t-fast) var(--ease),
-              box-shadow var(--t-fast) var(--ease), opacity var(--t-fast) var(--ease);
+              box-shadow var(--t-fast) var(--ease), opacity var(--t-fast) var(--ease),
+              transform var(--t-fast) var(--ease-out);
 }
 .btn:active:not(:disabled) { transform: scale(.985); }
 .btn:disabled { opacity: .38; cursor: not-allowed; }
@@ -314,6 +333,13 @@ code { font-family: var(--font-mono); font-size: .92em; }
 .btn--tonal:hover:not(:disabled) { background: var(--accent-tint); }
 .btn--tonal.is-ready { background: var(--accent); color: var(--on-accent); box-shadow: var(--shadow-1); }
 .btn--tonal.is-ready:hover:not(:disabled) { background: var(--accent-hover); }
+/* Touch opens Maps directly, but a degraded route is not ready for departure.
+   Keep that available action secondary until the route earns the ready state,
+   so recovery screens never present two green primaries. */
+.app:not([data-route-state="ready"]) #btnMapsAction.is-ready {
+  background: var(--accent-wash); color: var(--accent-hover); box-shadow: none;
+}
+.app:not([data-route-state="ready"]) #btnMapsAction.is-ready:hover:not(:disabled) { background: var(--accent-tint); }
 
 .btn--ghost { background: rgba(0, 0, 0, .05); color: var(--text-2); }
 .btn--ghost:hover:not(:disabled) { background: rgba(0, 0, 0, .09); color: var(--text); }
@@ -337,7 +363,19 @@ code { font-family: var(--font-mono); font-size: .92em; }
   flex: none;
 }
 
-.rail-foot { flex: none; padding-top: var(--space-2); border-top: var(--hair) solid var(--sep); }
+.route-status {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--space-2);
+  min-height: 22px; padding-inline: 2px; flex: none;
+  animation: status-in var(--t-base) var(--ease-out);
+}
+.route-status .btn { min-height: 28px; padding-inline: var(--space-2); font-size: var(--fs-2); }
+@keyframes status-in { from { opacity: 0; transform: translateY(-3px); } }
+
+.rail-foot {
+  position: relative;
+  display: flex; align-items: center; justify-content: space-between; gap: var(--space-2);
+  flex: none; padding-top: var(--space-2); border-top: var(--hair) solid var(--sep);
+}
 .status {
   display: inline-flex; align-items: center; gap: var(--space-2);
   font-size: var(--fs-2); font-weight: 400; color: var(--text-3);
@@ -345,7 +383,34 @@ code { font-family: var(--font-mono); font-size: .92em; }
 .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex: none; }
 .status[data-state="busy"] .status-dot { background: var(--text-3); animation: pulse 1.1s var(--ease) infinite; }
 .status[data-state="error"] .status-dot { background: var(--danger); }
+.status[data-state="ready"] { color: var(--accent-hover); font-weight: 500; }
+.status[data-state="error"] { color: var(--danger); }
 @keyframes pulse { 50% { opacity: .3; } }
+
+.shortcut-help { position: relative; margin-left: auto; }
+.shortcut-help summary {
+  list-style: none; cursor: pointer; color: var(--text-3); font-size: var(--fs-1);
+  border-radius: var(--r-sm); padding: var(--space-1) 2px;
+}
+.shortcut-help summary::-webkit-details-marker { display: none; }
+.shortcut-help summary:hover { color: var(--text-2); }
+.shortcut-panel {
+  position: absolute; right: 0; bottom: calc(100% + var(--space-2)); z-index: 30;
+  width: 218px; display: grid; gap: var(--space-2);
+  padding: var(--space-3); background: var(--surface); border-radius: var(--r-lg);
+  box-shadow: var(--shadow-3); color: var(--text-2); font-size: var(--fs-2);
+  animation: shortcut-in var(--t-base) var(--ease-out);
+}
+.shortcut-panel span { display: flex; align-items: center; gap: var(--space-1); min-height: 20px; }
+kbd {
+  display: inline-grid; place-items: center; min-width: 21px; min-height: 20px;
+  padding-inline: 5px; border-radius: var(--r-sm); background: var(--hover);
+  box-shadow: inset 0 -1px 0 var(--sep-strong); color: var(--text-2);
+  font: 500 var(--fs-1)/1 var(--font-mono);
+}
+@keyframes shortcut-in {
+  from { opacity: 0; transform: translateY(5px); clip-path: inset(12% 0 0 0 round var(--r-lg)); }
+}
 
 /* --------------------------------------------------------- pane headings -- */
 .pane-head {
@@ -355,6 +420,7 @@ code { font-family: var(--font-mono); font-size: .92em; }
   background: var(--surface);
   flex: none;
 }
+.pane-actions { display: flex; align-items: center; gap: var(--space-2); margin-inline-start: auto; }
 .pane-head > .legend { flex-basis: 100%; }
 .pane-head > .legend:empty { display: none; }
 .pane-title {
@@ -406,7 +472,7 @@ code { font-family: var(--font-mono); font-size: .92em; }
      yellow today-tint has nothing to distinguish "today" FROM and just washes
      the whole column an unbounded muddy yellow. Kill it. */
   --fc-today-bg-color: transparent;
-  --fc-now-indicator-color: var(--danger);
+  --fc-now-indicator-color: var(--text-2);
   --fc-neutral-bg-color: transparent;
   --fc-list-event-hover-bg-color: transparent;
 }
@@ -444,8 +510,8 @@ code { font-family: var(--font-mono); font-size: .92em; }
 .fc .fc-timegrid-now-indicator-arrow { display: none; }
 .fc .fc-highlight { background: var(--accent-wash); border-radius: var(--r-sm); }
 
-/* An event is a card: white, rounded, softly raised, with the accent carried
-   as a leading edge rather than as a full fill. */
+/* An event is a card: white, rounded and softly raised beside the route track.
+   The track owns state colour; the card does not repeat it as a stripe. */
 .fc .fc-timegrid-event,
 .fc .fc-v-event {
   background: var(--surface);
@@ -458,8 +524,8 @@ code { font-family: var(--font-mono); font-size: .92em; }
   overflow: hidden;
   transition: box-shadow var(--t-fast) var(--ease), transform var(--t-fast) var(--ease-out);
 }
-.fc .fc-v-event:hover { box-shadow: var(--shadow-2); }
-.fc .fc-v-event.is-selected { box-shadow: var(--shadow-2); }
+.fc .fc-v-event:hover, .fc .fc-v-event.is-hover { box-shadow: var(--shadow-2); }
+.fc .fc-v-event.is-selected { box-shadow: 0 0 0 2px var(--accent), var(--shadow-2); }
 .fc .fc-v-event.is-multiselected { box-shadow: 0 0 0 2px var(--accent), var(--shadow-1); }
 
 /* The one state the legend's red mark exists to explain. It previously tinted
@@ -591,6 +657,12 @@ code { font-family: var(--font-mono); font-size: .92em; }
   max-height: 260px; overflow-y: auto; overflow-x: hidden;
   padding: var(--space-1);
 }
+.search-message {
+  position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 20;
+  padding: var(--space-3); color: var(--text-2); font-size: var(--fs-2);
+  background: var(--surface); border: var(--hair) solid var(--sep);
+  border-radius: var(--r-md); box-shadow: var(--shadow-3);
+}
 .search-hit {
   display: block; width: 100%; text-align: left;
   padding: var(--space-2); border-radius: var(--r-sm);
@@ -646,6 +718,7 @@ code { font-family: var(--font-mono); font-size: .92em; }
   border-radius: 50%; font-size: var(--fs-4);
   transition: background var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
 }
+.siding-x svg { width: 16px; height: 16px; display: block; }
 .siding-x:hover { background: var(--danger-wash); color: var(--danger); }
 
 /* Schedule this stop into the first gap that holds it. Constructive, so it
@@ -662,6 +735,10 @@ code { font-family: var(--font-mono); font-size: .92em; }
   padding: var(--space-5) var(--space-3); text-align: center;
   color: var(--text-3); font-size: var(--fs-2); font-weight: 400; line-height: var(--lh-read);
 }
+
+.tray-actions { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-1); flex: none; }
+.tray-actions .btn { padding-inline: var(--space-2); background: transparent; }
+.tray-actions .btn:hover:not(:disabled) { background: rgba(0, 0, 0, .05); }
 
 /* ----------------------------------------------------------------- map --- */
 .map-pane { position: relative; min-width: 0; }
@@ -692,7 +769,10 @@ code { font-family: var(--font-mono); font-size: .92em; }
    annotations converge on. A shadow is legitimate here and only here: a marker
    floats above arbitrary tile content and needs to separate from it, which no
    tonal step can do on an unknown background. */
-.pin { display: flex; flex-direction: column; align-items: center; cursor: pointer; position: relative; }
+.pin {
+  display: flex; flex-direction: column; align-items: center; cursor: pointer; position: relative;
+  transition: opacity var(--t-fast) var(--ease);
+}
 .pin-tick {
   position: relative;
   min-width: 24px; height: 24px; padding: 0 6px; border-radius: var(--r-pill);
@@ -737,6 +817,8 @@ code { font-family: var(--font-mono); font-size: .92em; }
 .pin:hover .pin-tick, .pin.is-hover .pin-tick { transform: scale(1.12); }
 .pin.is-active .pin-tick { transform: scale(1.18); }
 .pin.is-active .pin-stem { height: 9px; }
+.pin.is-active { z-index: 2; }
+.map-pane.has-active .pin:not(.is-active):not(.pin--start) { opacity: .48; }
 
 .pin.is-unfit .pin-tick, .pin.is-conflict .pin-tick { background: var(--danger); }
 .pin.is-unfit .pin-stem, .pin.is-conflict .pin-stem { background: var(--danger); }
@@ -767,6 +849,10 @@ code { font-family: var(--font-mono); font-size: .92em; }
 .sheet textarea { resize: vertical; font-family: var(--font-mono); line-height: 1.6; padding: var(--space-3); }
 .sheet textarea:focus, .field input:focus {
   border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px var(--accent-wash);
+}
+.sheet textarea[aria-invalid="true"], .field input[aria-invalid="true"] { border-color: var(--danger); }
+.sheet textarea[aria-invalid="true"]:focus, .field input[aria-invalid="true"]:focus {
+  box-shadow: 0 0 0 3px var(--danger-wash);
 }
 .field { display: flex; flex-direction: column; gap: 5px; }
 .field > span { font-size: var(--fs-2); font-weight: 500; color: var(--text-2); }
@@ -811,7 +897,9 @@ input, textarea { caret-color: var(--accent); }
   color: var(--on-accent); max-width: 78vw;
   box-shadow: var(--shadow-3);
   animation: toast-in var(--t-base) var(--ease-out);
+  transition: opacity var(--t-base) var(--ease), transform var(--t-base) var(--ease-out);
 }
+.toast.is-leaving { opacity: 0; transform: translateY(6px) scale(.98); }
 .toast[data-kind="error"] { background: var(--danger); }
 .toast[data-kind="ok"]    { background: var(--accent); }
 @keyframes toast-in { from { opacity: 0; transform: translateY(10px) scale(.97); } }
@@ -859,12 +947,13 @@ input, textarea { caret-color: var(--accent); }
   .rail > .totals       { order: 4; }
   .rail > .delta        { order: 5; }
   .rail > .rail-actions { order: 6; }
-  .rail > .rail-note    { order: 7; }
-  .view-switch          { order: 8; }
-  .line-pane            { order: 9; }
-  .map-pane             { order: 9; }
-  .rail > .tray         { order: 9; }
-  .rail > .rail-foot    { order: 11; }
+  .rail > .route-status { order: 7; }
+  .rail > .rail-note    { order: 8; }
+  .view-switch          { order: 9; }
+  .line-pane            { order: 10; }
+  .map-pane             { order: 10; }
+  .rail > .tray         { order: 10; }
+  .rail > .rail-foot    { order: 12; }
   .view-switch {
     display: flex; gap: 4px; position: sticky; top: 0; z-index: 10;
     background: var(--bg); padding: var(--space-2) var(--space-4);
@@ -876,11 +965,17 @@ input, textarea { caret-color: var(--accent); }
   .app:not([data-view="schedule"]) .line-pane,
   .app:not([data-view="map"]) .map-pane,
   .app:not([data-view="places"]) .tray { display: none; }
-  .rail-actions { display: grid; grid-template-columns: 1fr 1.4fr; gap: var(--space-2); }
+  .rail-actions { display: grid; grid-template-columns: 1fr; gap: var(--space-2); }
+  .rail-actions:has(.rail-actions--split:not([hidden])) { grid-template-columns: .9fr 1.4fr; }
   .rail-actions--split { display: grid; grid-template-columns: 1fr auto; gap: var(--space-1); }
   .rail-actions .btn { padding-inline: var(--space-2); min-height: 44px; }
+  .pane-actions { width: 100%; }
+  .pane-actions .btn { flex: 1; min-height: 44px; }
   .line-pane.is-empty .line-body { height: 300px; overflow: hidden; }
-  .daynav-date, .daynav-btn, .daynav-today { min-height: 40px; }
+  .daynav { grid-template-columns: 44px 1fr 44px auto; }
+  .daynav-date, .daynav-btn, .daynav-today { min-height: 44px; }
+  .siding-x, .siding-add { min-width: 44px; min-height: 44px; padding: 0; display: grid; place-items: center; }
+  .maplibregl-ctrl-group button { width: 44px !important; height: 44px !important; }
   .sheet textarea, .field input, .search input { font-size: 16px; }
   .sheet .btn { min-height: 44px; }
   .sheet { max-height: calc(100dvh - 32px); }
@@ -897,6 +992,18 @@ input, textarea { caret-color: var(--accent); }
   .tray-list { max-height: 46dvh; }
   /* Tall enough to actually read the route, not a letterbox at the page end. */
   .map-pane { min-height: 62dvh; }
+
+  /* Once the route is sound, the next action is handoff. Optimize stays in
+     reach, but Directions becomes the visual destination of the phone flow. */
+  .app[data-route-state="ready"] #btnOptimize {
+    background: var(--accent-wash); color: var(--accent-hover); box-shadow: none;
+  }
+  .app[data-route-state="ready"] #btnOptimize:hover:not(:disabled) { background: var(--accent-tint); }
+  .app[data-route-state="ready"] #btnMapsAction {
+    background: var(--accent); color: var(--on-accent); box-shadow: var(--shadow-1);
+  }
+  .app[data-route-state="ready"] #btnMapsAction:hover:not(:disabled) { background: var(--accent-hover); }
+  .shortcut-help { display: none; }
 }
 
 /* Reduced motion means less movement, not no feedback: spatial travel and the
@@ -924,9 +1031,13 @@ input, textarea { caret-color: var(--accent); }
 
 @media (pointer: coarse) {
   .btn { min-height: 44px; }
+  .app[data-route-state="ready"] #btnOptimize {
+    background: var(--accent-wash); color: var(--accent-hover); box-shadow: none;
+  }
+  .app[data-route-state="ready"] #btnOptimize:hover:not(:disabled) { background: var(--accent-tint); }
   .daynav { grid-template-columns: 44px 1fr 44px auto; }
-  .daynav-btn, .daynav-date { min-height: 40px; }
-  .daynav-today { min-height: 40px; padding-inline: var(--space-3); }
+  .daynav-btn, .daynav-date { min-height: 44px; }
+  .daynav-today { min-height: 44px; padding-inline: var(--space-3); }
   .search input { min-height: 44px; }
   .search-hit { padding: var(--space-3) var(--space-2); }
   .siding { padding-block: var(--space-3); }
@@ -934,6 +1045,6 @@ input, textarea { caret-color: var(--accent); }
   .siding-x { min-width: 44px; min-height: 44px; padding: 0; display: grid; place-items: center; }
   .siding-add { min-width: 44px; min-height: 44px; padding: 0; display: grid; place-items: center; }
   .ev-badge--action { min-height: 32px; padding-inline: var(--space-3); display: inline-flex; align-items: center; }
-  .maplibregl-ctrl-group button { width: 40px !important; height: 40px !important; }
+  .maplibregl-ctrl-group button { width: 44px !important; height: 44px !important; }
 }
 

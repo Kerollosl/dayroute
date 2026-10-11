@@ -71,7 +71,7 @@ export class Tray {
   }
 
   _wire() {
-    const { searchInput, searchResults, btnPaste, pasteSheet, pasteBox, trayList } = this.els;
+    const { searchInput, searchResults, btnPaste, pasteSheet, pasteForm, pasteBox, pasteNote, trayList } = this.els;
 
     let t = null;
     searchInput.addEventListener('input', () => {
@@ -89,8 +89,10 @@ export class Tray {
         this.cursor = (this.cursor + (e.key === 'ArrowDown' ? 1 : -1) + this.hits.length) % this.hits.length;
         [...searchResults.children].forEach((b, i) => {
           b.classList.toggle('is-highlighted', i === this.cursor);
+          b.setAttribute('aria-selected', String(i === this.cursor));
           if (i === this.cursor) b.scrollIntoView({ block: 'nearest' });
         });
+        searchInput.setAttribute('aria-activedescendant', `place-hit-${this.cursor}`);
       }
       if (e.key === 'Enter' && this.hits.length) { e.preventDefault(); this._take(this.hits[Math.max(0, this.cursor)]); }
     });
@@ -98,11 +100,37 @@ export class Tray {
       if (!searchResults.contains(e.target) && e.target !== searchInput) this._renderHits([]);
     });
 
-    btnPaste.addEventListener('click', () => { pasteBox.value = ''; pasteSheet.showModal(); });
-    pasteSheet.addEventListener('close', () => {
-      if (pasteSheet.returnValue !== 'ok') return;
+    btnPaste.addEventListener('click', () => {
+      pasteBox.value = '';
+      pasteBox.removeAttribute('aria-invalid');
+      pasteNote.textContent = '';
+      pasteNote.dataset.state = '';
+      pasteNote.setAttribute('role', 'status');
+      pasteNote.setAttribute('aria-live', 'polite');
+      pasteSheet.showModal();
+      setTimeout(() => pasteBox.focus(), 30);
+    });
+    pasteBox.addEventListener('input', () => {
+      pasteBox.removeAttribute('aria-invalid');
+      if (pasteNote.dataset.state === 'bad') {
+        pasteNote.textContent = '';
+        pasteNote.dataset.state = '';
+        pasteNote.setAttribute('role', 'status');
+        pasteNote.setAttribute('aria-live', 'polite');
+      }
+    });
+    pasteForm.addEventListener('submit', (e) => {
       const rows = parseList(pasteBox.value);
-      if (!rows.length) { this.toast('Nothing recognisable in that paste.', 'warn'); return; }
+      if (!rows.length) {
+        e.preventDefault();
+        pasteBox.setAttribute('aria-invalid', 'true');
+        pasteNote.dataset.state = 'bad';
+        pasteNote.setAttribute('role', 'alert');
+        pasteNote.setAttribute('aria-live', 'assertive');
+        pasteNote.textContent = 'Add at least one place or address before continuing.';
+        pasteBox.focus();
+        return;
+      }
       this.store.batch(() => {
         for (const r of rows) this.store.add({ name: r.name || r.address, address: r.address }, { checkpoint: false });
       });
@@ -142,12 +170,14 @@ export class Tray {
   }
 
   _searchMessage(text) {
-    const p = document.createElement('p');
-    p.className = 'search-message';
-    p.setAttribute('role', 'status');
-    p.textContent = text;
-    this.els.searchResults.replaceChildren(p);
-    this.els.searchResults.hidden = false;
+    this.hits = [];
+    this.cursor = -1;
+    this.els.searchResults.replaceChildren();
+    this.els.searchResults.hidden = true;
+    this.els.searchStatus.textContent = text;
+    this.els.searchStatus.hidden = false;
+    this.els.searchInput.removeAttribute('aria-activedescendant');
+    this.els.searchInput.setAttribute('aria-expanded', 'false');
   }
 
   _renderHits(hits) {
@@ -155,11 +185,18 @@ export class Tray {
     this.cursor = -1;
     const box = this.els.searchResults;
     box.textContent = '';
+    this.els.searchStatus.textContent = '';
+    this.els.searchStatus.hidden = true;
+    this.els.searchInput.removeAttribute('aria-activedescendant');
+    this.els.searchInput.setAttribute('aria-expanded', String(hits.length > 0));
     if (!hits.length) { box.hidden = true; return; }
-    for (const h of hits) {
+    for (const [i, h] of hits.entries()) {
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'search-hit';
+      btn.id = `place-hit-${i}`;
+      btn.setAttribute('role', 'option');
+      btn.setAttribute('aria-selected', 'false');
       const b = document.createElement('b'); b.textContent = h.name;
       const s = document.createElement('span'); s.textContent = h.label || '';
       btn.append(b, s);
@@ -251,7 +288,14 @@ export class Tray {
 
       const x = document.createElement('button');
       x.className = 'siding-x'; x.type = 'button'; x.dataset.del = s.id;
-      x.setAttribute('aria-label', `Remove ${s.name || s.address}`); x.textContent = '×';
+      x.setAttribute('aria-label', `Remove ${s.name || s.address}`);
+      const xIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      xIcon.setAttribute('viewBox', '0 0 16 16'); xIcon.setAttribute('aria-hidden', 'true');
+      const xPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      xPath.setAttribute('d', 'M4 4l8 8M12 4l-8 8');
+      xPath.setAttribute('stroke', 'currentColor'); xPath.setAttribute('stroke-width', '1.8');
+      xPath.setAttribute('stroke-linecap', 'round'); xPath.setAttribute('fill', 'none');
+      xIcon.appendChild(xPath); x.appendChild(xIcon);
 
       row.append(tick, mid, add, x);
       list.appendChild(row);

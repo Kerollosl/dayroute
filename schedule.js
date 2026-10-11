@@ -53,6 +53,7 @@ export class Schedule {
     this.hoverId = null;
     this._raf = 0;
     this._rects = null;
+    this._knownEventIds = new Set(this.store.scheduled().map((s) => s.id));
     this._build();
   }
 
@@ -98,6 +99,7 @@ export class Schedule {
         if (self.plan?.unfitIds?.has(s.id)) c.push('is-unfit');
         if (self.plan?.conflictIds?.has(s.id)) c.push('is-conflict');
         if (s.id === self.selectedId) c.push('is-selected');
+        if (s.id === self.hoverId) c.push('is-hover');
         if (self.selectedIds.has(s.id)) c.push('is-multiselected');
         return c;
       },
@@ -121,20 +123,28 @@ export class Schedule {
       },
 
       eventMouseEnter: (info) => {
-        self.hoverId = info.event.extendedProps.stopId;
+        self.setHover(info.event.extendedProps.stopId);
         self.onHoverStop?.(self.hoverId);
-        self.scheduleDraw();
       },
       eventMouseLeave: () => {
-        self.hoverId = null;
+        self.setHover(null);
         self.onHoverStop?.(null);
-        self.scheduleDraw();
       },
 
       eventDidMount: (info) => {
         // A data attribute only. Never touch info.el.style.position — FC sizes
         // events by absolute top/bottom and overriding it breaks duration.
         info.el.dataset.stopId = info.event.extendedProps.stopId || '';
+        info.el.setAttribute('aria-describedby', 'scheduleKeyboardHelp');
+        if (info.el.dataset.stopId === self.selectedId) info.el.setAttribute('aria-current', 'true');
+        info.el.addEventListener('focus', () => {
+          self.setHover(info.el.dataset.stopId);
+          self.onHoverStop?.(info.el.dataset.stopId);
+        });
+        info.el.addEventListener('blur', () => {
+          self.setHover(null);
+          self.onHoverStop?.(null);
+        });
         // A keyboard nudge writes to the store, which re-renders and destroys
         // the focused node. Without this the first arrow key throws focus to
         // the body and the second does nothing at all.
@@ -478,9 +488,9 @@ export class Schedule {
       const b = document.createElement('span');
       b.className = 'ev-badge ev-badge--unfit';
       // Two different faults wore one word. Optimize EXCLUDES a stop it cannot
-      // place; an infeasible hand-built day still visits the stop, just late.
+      // place; an infeasible hand-built day still visits the stop, but arrives late.
       // "Won't fit" for the first is accurate, for the second it is not.
-      b.textContent = this.plan?.lateId === s?.id ? 'Runs late' : "Won't fit";
+      b.textContent = this.plan?.lateId === s?.id ? 'Arrives late' : "Won't fit";
       top.appendChild(b);
     }
 
@@ -545,16 +555,58 @@ export class Schedule {
 
   /** Recompute events from the store and repaint. */
   refresh() {
+    if (this.hoverId) {
+      this.hoverId = null;
+      this.onHoverStop?.(null);
+    }
+    const nextIds = new Set(this.store.scheduled().map((s) => s.id));
+    const added = [...nextIds].filter((id) => !this._knownEventIds.has(id));
+    this._knownEventIds = nextIds;
     this.cal.gotoDate(this.store.day);
     this.cal.refetchEvents();
     this._fitWindow();
     this.scheduleDraw();
+    if (added.length && !REDUCED.matches) {
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        for (const id of added) {
+          const node = this.els.calendar.querySelector(`.fc-v-event[data-stop-id="${CSS.escape(id)}"]`);
+          node?.animate(
+            [
+              { opacity: .68, transform: 'scale(.985)', filter: 'blur(1px)', clipPath: 'inset(0 0 16% 0 round 9px)' },
+              { opacity: 1, transform: 'none', filter: 'blur(0)', clipPath: 'inset(0 0 0 0 round 9px)' },
+            ],
+            { duration: 260, easing: 'cubic-bezier(.16, 1, .3, 1)' },
+          );
+        }
+      }));
+    }
   }
 
   /** Ordering + leg figures come from route.js; the Line just draws them. */
   setPlan(plan) {
     this.plan = plan;
     this.cal.refetchEvents();
+    this.scheduleDraw();
+  }
+
+  /** Mirror transient map focus without forcing FullCalendar to rebuild. */
+  setHover(id) {
+    this.hoverId = id || null;
+    for (const node of this.els.calendar.querySelectorAll('.fc-v-event')) {
+      node.classList.toggle('is-hover', !!id && node.dataset.stopId === id);
+    }
+    this.scheduleDraw();
+  }
+
+  /** Persist the same selected stop across schedule and map views. */
+  setActive(id) {
+    this.selectedId = id || null;
+    for (const node of this.els.calendar.querySelectorAll('.fc-v-event')) {
+      const active = !!id && node.dataset.stopId === id;
+      node.classList.toggle('is-selected', active);
+      if (active) node.setAttribute('aria-current', 'true');
+      else node.removeAttribute('aria-current');
+    }
     this.scheduleDraw();
   }
 

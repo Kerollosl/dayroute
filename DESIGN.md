@@ -125,7 +125,7 @@ legend's red mark on nothing at all and reported the problem as one line of
 computes `feasible` and `lateId` on every pass; `app.js` folds `lateId` into
 the marked set so the card, the badge and the map pin all carry it at once. The
 badge distinguishes the two faults: Optimize *excludes* a stop ("Won't fit"),
-an infeasible hand-built day still visits it ("Runs late").
+an infeasible hand-built day still visits it ("Arrives late").
 
 **A fault badge replaces the "Fixed" badge, never stacks with it.** A conflict
 or a late arrival only happens to a stop that is already fixed, so both badges
@@ -143,8 +143,10 @@ tripped the `side-tab` detector honestly.
 **The Coarse Pointer Rule.** Touch targets are sized under
 `@media (pointer: coarse)`, not by viewport width — a narrow window on a laptop
 is still a mouse, and a large tablet is still a thumb. Everything interactive
-measures at least 40px there, and the destructive control (remove a stop) gets a
-full 44px. Desktop sizes stay at 32-34px, which is correct for a cursor.
+measures at least 44px there. The same 44px floor applies to the phone layout
+even when a test browser reports a fine pointer, so responsive QA measures the
+surface the user actually sees. Desktop sizes stay at 32-34px, which is correct
+for a cursor.
 
 **The legend earns each mark independently.** "A key for marks that are not on
 screen is noise" was applied all-or-nothing at zero stops, so a day of one
@@ -160,34 +162,49 @@ measured on the clock alone: subtracting drive time would need a matrix
 containing a stop that is by definition not in the route yet, and Principle 3
 forbids the drag loop waiting on the network. Placing optimistically is safe
 only because an infeasible result now marks itself on every recompute — the
-stop lands and says "Runs late" rather than lying.
+stop lands and says "Arrives late" rather than lying.
 
 **Naming a fault without offering a way out is half a design.** The conflict
 badge is a *button*: it moves the stop to when the one it overlaps ends, plus
 the drive between them when the cached matrix knows it. Without that travel
-allowance the "fix" merely trades a collision for a "Runs late", which resolves
+allowance the "fix" merely trades a collision for an "Arrives late", which resolves
 nothing the person can act on. Both stops in a collision are pinned, so which
 one yields is a real decision — pressing a badge is how they say which.
 
-**The primary action follows the device, not the state.** Copy-then-open is a
-desktop flow: you copy a link to put it somewhere. On the phone there is
-nowhere to paste it and the next action is always "open this in Maps", so under
-`pointer: coarse` the button starts as **Open in Maps** and opens on first
-press. Keyed on the pointer, like every other touch decision here.
+**The primary action follows the phase and the device.** Optimize remains
+visible as the workflow's destination, but it does not own every state. Once a
+sound route exists, the phone promotes **Directions** and quiets Optimize to a
+tonal action: the next step is driving, not recalculating. Copy-then-open stays
+a desktop flow. Under `pointer: coarse`, a single-link route begins as **Open in
+Maps** and opens on the first press.
 
-**Empty states name the way in.** A bare ruled grid is a blank page. The
-schedule's empty state states the two available actions (click a time, or drag
-from Unscheduled) and keeps `pointer-events: none` so the click-a-time
-affordance it describes still works through it. The legend hides when there are
-no stops — a key for marks that are not on screen is noise. `Optimize` disables
-below two routable stops rather than offering an action that provably cannot do
-anything.
+**Actions reveal when they become true.** Directions appears only when a Maps
+link exists; Undo only when the session has something to undo; Move to now only
+for a populated schedule on today. Optimize is the exception: it stays visible
+while disabled so the workflow remains learnable. On an empty day, the schedule
+header actions yield to one primary **Add your first stop** invitation; manual
+entry and paste remain quiet alternatives beside search.
+
+**Empty states name one way in.** A bare ruled grid is a blank page. The
+schedule hides it and offers one primary first-stop action with a short account
+of fixed appointments versus flexible errands. The legend and header actions
+hide when there are no stops — a key or secondary action for objects that are
+not on screen is noise. `Optimize` disables below the useful routing threshold
+rather than offering an action that provably cannot do anything.
+
+**Selection crosses the pane boundary.** A schedule card and its map marker are
+two views of the same stop. Selecting either persists one shared ID, outlines
+the card, lifts and labels the marker, and quiets the other pins. Switching to
+Map preserves that selection and pans only when the marker falls outside a safe
+inset; it never recentres an already visible stop.
 
 **The starting point is not a stop.** It has no grid slot, no sequence number,
 no dwell, and never counts toward "Stops". On the map it is a bearing dot
 (`.pin--start`), never a numbered badge, because it is not somewhere you go. In
 the rail it is a settings row — current value plus a chevron — the shape both
-platforms use for "this is the value, tap to change it".
+platforms use for "this is the value, tap to change it". Its drive begins before
+the first card's clock time; the inbound leg must never be added after that card
+has already started, because the visible gap already reserves the travel time.
 
 **FullCalendar sizing.** Never set `position` on `.fc-v-event` / `info.el` — FC
 sizes events by absolute top/bottom and overriding it makes them grow to fit text.
@@ -251,7 +268,10 @@ chrome, `--shadow-3` for dialogs, toasts and popovers. Depth is never a border.
 Motion: `--t-fast 120ms` (state), `--t-base 220ms` (entry), `--t-move 420ms` (the
 post-optimise travel), on `--ease cubic-bezier(.32,.72,0,1)`. Under
 `prefers-reduced-motion` spatial travel and looping animation stop; opacity and
-colour state changes stay.
+colour state changes stay. Optimize owns the authored focal movement. Day and
+phone-view changes use short directional continuity, while newly scheduled
+stops resolve into their real grid position. These effects use the Web
+Animations API and are interruptible; content is visible before they run.
 
 ---
 
@@ -260,8 +280,8 @@ colour state changes stay.
 Three columns, `"rail line map"`.
 
 - **Rail** (`clamp(248px, 20vw, 292px)`) — brand, day segmented control, the three
-  totals, the two actions, then **Unscheduled**, which takes the whole remaining
-  height, then status.
+  totals, route actions and their persistent status, then **Unscheduled**, which
+  takes the remaining height, then local-save state and shortcut help.
 - **Schedule** (`clamp(340px, 30vw, 452px)`) — full column height.
 - **Map** — the remainder.
 
@@ -339,6 +359,10 @@ typed by anyone. Now:
   focus to `<body>` and the second does nothing.
 - The stop sheet has an **Arrive at** field with minute precision. Enter a time
   to schedule on the selected day; clear it to keep the stop unscheduled.
+- The compact **Shortcuts** disclosure in the desktop rail names the efficient
+  path without putting instructions in the primary workspace. Controls also
+  expose `aria-keyshortcuts`, and focused event cards reference their movement
+  instructions programmatically.
 
 The document's `<h1>` is the wordmark; headings previously started at `<h2>`.
 MapLibre's zoom controls ship a `#0096FF` focus ring — the only non-accent focus
@@ -361,8 +385,9 @@ The refinement changes access and feedback, not the visual identity:
 - Phone screens use a sticky Schedule / Map / Places control. The schedule
   keeps its natural time-scaled page scroll; the map and saved places are one
   action away. The starting point stays above the route totals.
-- Add stop is visible in the schedule header. The empty day has a compact,
-  actionable invitation instead of a full screen of unused time slots.
+- Add stop is visible in the populated schedule header. The empty day has one
+  compact, actionable invitation instead of duplicate Add controls and a full
+  screen of unused time slots.
 - The date label is a native date input. New-stop forms are drafts, not saved
   events, until submission. Enter saves; Cancel and Escape do not change data.
 - Long routes expose each phone-safe Maps leg as a separate, labeled link.
@@ -372,6 +397,15 @@ The refinement changes access and feedback, not the visual identity:
   places and map pins have keyboard-accessible editing controls.
 - A hidden map defers camera fitting until visible. Async route results and
   optimization cannot overwrite a newer day or edit.
+- Mobile promotes Directions only after the route is complete and keeps route
+  progress or recovery beside the action. Directions, Undo, and Move to now are
+  progressively disclosed; Optimize remains visible as the workflow landmark.
+- Dialogs are programmatically named. Blocking form errors stay inline, mark
+  the relevant field, announce themselves, and preserve focus and input. Search
+  fields expose true combobox/listbox relationships.
+- Schedule selection persists onto the map. Directional day/view transitions
+  and stop insertion motion explain spatial change, and reduce-motion removes
+  travel without removing status feedback.
 
 Verification: regression tests plus browser checks at 320, 390, 768, 1024 and
 1440px. Mocked routing fixtures exercise fixed/unfit appointments, long-route

@@ -4,27 +4,30 @@
 // matrix, synchronously. Only the road geometry redraw touches the network,
 // and it is debounced — which also keeps us inside OSRM's courtesy rate.
 
-import { Store, toMin, toHM, fmtDur, fmtMiles, todayISO } from './store.js';
-import { Schedule } from './schedule.js';
-import { Tray } from './stops.js';
-import { RouteMap } from './map.js';
-import * as R from './route.js';
+import { Store, toMin, toHM, fmtDur, fmtMiles, todayISO, nextQuarterHour } from './store.js?v=2026-09-13-polish-6';
+import { Schedule } from './schedule.js?v=2026-09-13-polish-6';
+import { Tray } from './stops.js?v=2026-09-13-polish-6';
+import { RouteMap } from './map.js?v=2026-09-13-polish-6';
+import * as R from './route.js?v=2026-09-12-drive-gap';
 import * as G from './gmaps.js';
 import * as geo from './geocode.js';
 
 const $ = (id) => document.getElementById(id);
 const els = {
+  app: $('app'),
   calendar: $('calendar'), lineOverlay: $('lineOverlay'),
   trayList: $('trayList'), trayCount: $('trayCount'),
-  searchInput: $('searchInput'), searchResults: $('searchResults'),
-  btnPaste: $('btnPaste'), pasteSheet: $('pasteSheet'), pasteBox: $('pasteBox'),
+  searchInput: $('searchInput'), searchResults: $('searchResults'), searchStatus: $('searchStatus'),
+  btnPaste: $('btnPaste'), pasteSheet: $('pasteSheet'), pasteForm: $('pasteForm'), pasteBox: $('pasteBox'), pasteNote: $('pasteNote'),
   totDrive: $('totDrive'), totDist: $('totDist'), totStops: $('totStops'),
   delta: $('delta'), deltaFigure: $('deltaFigure'), deltaLabel: $('deltaLabel'),
   btnOptimize: $('btnOptimize'), btnUndo: $('btnUndo'),
   btnMapsAction: $('btnMapsAction'), btnMapsActionLabel: $('btnMapsActionLabel'), mapsNote: $('mapsNote'),
+  routeSecondaryActions: $('routeSecondaryActions'), routeStatus: $('routeStatus'),
   dayPrev: $('dayPrev'), dayNext: $('dayNext'), dayToday: $('dayToday'), dayLabel: $('dayLabel'), dayPicker: $('dayPicker'),
   netStatus: $('netStatus'), netStatusText: $('netStatusText'),
   legend: $('legend'), toasts: $('toasts'), lineEmpty: $('lineEmpty'),
+  btnMoveToNow: $('btnMoveToNow'),
   btnOrigin: $('btnOrigin'), originValue: $('originValue'), originSheet: $('originSheet'),
   originAddr: $('originAddr'), originNote: $('originNote'),
   originUseGeo: $('originUseGeo'), originClear: $('originClear'),
@@ -34,7 +37,7 @@ const els = {
   stopPinned: $('stopPinned'), stopDelete: $('stopDelete'), stopGeoNote: $('stopGeoNote'),
   stopStart: $('stopStart'),
   stopForm: $('stopForm'), stopDayHint: $('stopDayHint'),
-  btnAddStop: $('btnAddStop'), btnFirstStop: $('btnFirstStop'),
+  scheduleActions: $('scheduleActions'), btnAddStop: $('btnAddStop'), btnFirstStop: $('btnFirstStop'),
   mapsSheet: $('mapsSheet'), mapsLegs: $('mapsLegs'), btnCopyLegs: $('btnCopyLegs'),
   mapScrim: $('mapScrim'),
 };
@@ -55,18 +58,34 @@ let geomToken = 0;
 let computeToken = 0;
 let dataRevision = 0;
 let optimizing = false;
+let activeStopId = null;
 
 // -- chrome ----------------------------------------------------------------
 function toast(msg, kind = 'info') {
+  // One transient confirmation at a time. A newer action supersedes the old
+  // one; stacking "Moved" under "Reverted" makes both messages less true.
+  for (const old of els.toasts.children) {
+    old.classList.add('is-leaving');
+    setTimeout(() => old.remove(), 120);
+  }
   const t = document.createElement('div');
   t.className = 'toast';
   t.dataset.kind = kind;
+  t.setAttribute('role', kind === 'error' ? 'alert' : 'status');
   t.textContent = msg;                       // textContent only: names are user data
   els.toasts.appendChild(t);
-  setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 200); }, 3400);
+  setTimeout(() => {
+    if (!t.isConnected) return;
+    t.classList.add('is-leaving');
+    setTimeout(() => t.remove(), 200);
+  }, 3400);
 }
 
 const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)');
+const MOBILE_LAYOUT = window.matchMedia('(max-width: 900px)');
+let viewAnimation = null;
+let dayAnimation = null;
+let pendingDayDirection = 0;
 
 /**
  * Run a figure up to its value so the saving reads as something that happened,
@@ -90,6 +109,54 @@ function countTo(el, seconds, sign) {
 function status(text, state = 'ok') {
   els.netStatusText.textContent = text;
   els.netStatus.dataset.state = state;
+  els.routeStatus.hidden = !text;
+  els.app.dataset.routeState = state === 'ready' ? 'ready' : state === 'busy' ? 'busy' : state === 'error' ? 'error' : 'idle';
+}
+
+function clearFieldState(note, ...fields) {
+  for (const field of fields) field?.removeAttribute('aria-invalid');
+  if (note?.dataset.state === 'bad') {
+    note.textContent = '';
+    note.dataset.state = '';
+    note.setAttribute('role', 'status');
+    note.setAttribute('aria-live', 'polite');
+  }
+}
+
+function fieldMessage(note, text, state = '', ...invalidFields) {
+  note.dataset.state = state;
+  note.setAttribute('role', state === 'bad' ? 'alert' : 'status');
+  note.setAttribute('aria-live', state === 'bad' ? 'assertive' : 'polite');
+  note.textContent = text;
+  for (const field of invalidFields) field?.setAttribute('aria-invalid', 'true');
+}
+
+function directionalFrames(direction, distance = 10) {
+  const fromLeft = direction < 0;
+  return [
+    {
+      opacity: .78,
+      transform: `translateX(${fromLeft ? -distance : distance}px)`,
+      filter: 'blur(.7px)',
+      clipPath: fromLeft
+        ? `inset(0 ${distance}px 0 0 round var(--r-lg))`
+        : `inset(0 0 0 ${distance}px round var(--r-lg))`,
+    },
+    { opacity: 1, transform: 'none', filter: 'blur(0)', clipPath: 'inset(0 0 0 0 round var(--r-lg))' },
+  ];
+}
+
+function animateDayChange(direction) {
+  if (!direction || REDUCED.matches) return;
+  dayAnimation?.cancel();
+  dayAnimation = document.querySelector('.line-body')?.animate(directionalFrames(direction, 12), {
+    duration: 260,
+    easing: 'cubic-bezier(.16, 1, .3, 1)',
+  });
+  els.dayLabel.animate(directionalFrames(direction, 6), {
+    duration: 220,
+    easing: 'cubic-bezier(.16, 1, .3, 1)',
+  });
 }
 
 /**
@@ -97,8 +164,9 @@ function status(text, state = 'ok') {
  * board, not at a fixed 08:00. Optimising used to walk the clock from
  * DAY_START_MIN regardless, so a 10am-to-4pm day was pulled back two hours
  * purely because the window said it could be. "Least driving" never meant
- * "start earlier". The end bound stays fixed: without it the tail gap is
- * infinite and nothing is ever unfit.
+ * "start earlier". A starting point is the exception: its inbound drive begins
+ * before the first card so the card's displayed start remains its arrival.
+ * The finite end bound extends through the final scheduled stop.
  */
 const ORIGIN_ID = '__origin__';
 
@@ -143,29 +211,10 @@ function dayWindow(mstops, m = null) {
   const real = mstops.filter((s) => s.id !== ORIGIN_ID);
   const starts = real.map((s) => s.startMin).filter((v) => Number.isFinite(v));
   if (!starts.length) return {};
-  const earliest = Math.min(...starts);
-
-  // With a starting point, the day begins by DRIVING, so it has to begin early
-  // enough to reach the first stop at the time that stop is actually scheduled.
-  // Departing at the first stop's own clock time instead pushes every stop
-  // later by the inbound leg — which silently rescheduled the whole day and
-  // could make a fixed appointment unreachable ("Can't reach X in time") purely
-  // because an origin had been set.
-  const origin = mstops.find((s) => s.id === ORIGIN_ID);
-  if (!origin || !m) return { dayStart: earliest };
-
-  // Leaving before the first scheduled stop is only ever justified by a FIXED
-  // appointment that cannot be reached otherwise — you asked that optimising
-  // never drag the day earlier than the first event on the board. A flexible
-  // stop needs no lead: it simply shifts to whenever you arrive.
-  const firstPinned = real
-    .filter((s) => s.pinned)
-    .reduce((a, b) => (a == null || b.startMin < a.startMin ? b : a), null);
-  if (!firstPinned) return { dayStart: earliest };
-
-  const secs = m.durations?.[m.mi(origin)]?.[m.mi(firstPinned)];
-  const lead = Number.isFinite(secs) ? Math.ceil(secs / 60) : 0;
-  return { dayStart: Math.min(earliest, firstPinned.startMin - lead) };
+  return {
+    dayStart: R.scheduledDayStart(mstops, m),
+    dayEnd: R.scheduledDayEnd(real),
+  };
 }
 
 /**
@@ -206,8 +255,10 @@ function renderDayLabel() {
 }
 
 // -- the map ---------------------------------------------------------------
+let schedule;
 const map = new RouteMap(els.mapScrim.parentElement.querySelector('#map'), {
   onPinClick: (id) => openStop(id),
+  onPinHover: (id) => schedule?.setHover(id),
 });
 map.ready.then((ok) => {
   els.mapScrim.hidden = true;
@@ -238,7 +289,7 @@ function driveSecondsBetween(a, b) {
   } catch { return null; }
 }
 
-const schedule = new Schedule({
+schedule = new Schedule({
   store, els,
   onEditStop: (id, opts) => openStop(id, opts),
   onCreateStop: (draft) => openNewStop(draft),
@@ -247,6 +298,15 @@ const schedule = new Schedule({
   driveSecondsBetween,
   toast,
 });
+
+/** Keep the schedule card and map marker as two views of the same stop. */
+function setActiveStop(id, { reveal = false } = {}) {
+  const next = id && store.byId(id) ? id : null;
+  activeStopId = next;
+  schedule.setActive(next);
+  map.setActive(next);
+  if (reveal && next) map.reveal(store.byId(next));
+}
 
 /**
  * Move a colliding stop to when the stop it overlaps ends.
@@ -271,7 +331,7 @@ function resolveConflict(id) {
 
   // Land it after the blocker ENDS plus the drive between them, when the
   // cached matrix knows it. Without the travel allowance the "fix" simply
-  // trades a collision for a "Runs late" — technically truthful, but it has
+  // trades a collision for an "Arrives late" — technically truthful, but it has
   // not resolved anything the person can act on.
   const last = blockers.reduce((a, x) => (endOf(x) > endOf(a) ? x : a), blockers[0]);
   const drive = driveSecondsBetween(last, s);
@@ -307,7 +367,7 @@ const tray = new Tray({
  * which is by definition not in the route yet, and PRODUCT.md forbids the drag
  * loop waiting on the network. Placing optimistically is safe now that an
  * infeasible result marks itself on every recompute: if the stop does not
- * really fit, it lands and immediately says "Runs late" rather than lying.
+ * really fit, it lands and immediately says "Arrives late" rather than lying.
  */
 function placeInFirstGap(id) {
   const s = store.byId(id);
@@ -373,6 +433,19 @@ function emptyTotals() {
  */
 const COARSE = window.matchMedia?.('(pointer: coarse)');
 
+function syncSecondaryActions() {
+  els.routeSecondaryActions.hidden = els.btnMapsAction.hidden && els.btnUndo.hidden;
+}
+
+/** Keep a clock-dependent action honest even if this tab crosses midnight. */
+function syncMoveToNow() {
+  const canMoveToNow = store.scheduled(store.day).length > 0 && store.day === todayISO();
+  els.btnMoveToNow.hidden = !canMoveToNow;
+  els.btnMoveToNow.disabled = !canMoveToNow;
+  els.btnMoveToNow.title = canMoveToNow ? 'Shift all scheduled stops to the next quarter hour' : '';
+  return canMoveToNow;
+}
+
 function setMapsButtonState() {
   const stale = copiedSignature !== null && copiedSignature !== linkSignature(links);
   if (stale) copiedSignature = null;
@@ -381,9 +454,20 @@ function setMapsButtonState() {
   // next action is always "open this in Maps", so the button starts there.
   const isOpenState = links.length > 0
     && (COARSE?.matches || (!stale && copiedSignature !== null));
-  els.btnMapsActionLabel.textContent = links.length > 1 ? `Directions · ${links.length} legs` : isOpenState ? 'Open in Maps' : 'Copy link';
+  const nextLabel = links.length > 1 ? `Directions · ${links.length} legs` : isOpenState ? 'Open in Maps' : 'Copy link';
+  const labelChanged = els.btnMapsActionLabel.textContent !== nextLabel;
+  const wasVisible = !els.btnMapsAction.hidden;
+  els.btnMapsActionLabel.textContent = nextLabel;
   els.btnMapsAction.classList.toggle('is-ready', isOpenState);
   els.btnMapsAction.disabled = !links.length;
+  els.btnMapsAction.hidden = !links.length;
+  if (labelChanged && wasVisible && links.length && !REDUCED.matches) {
+    els.btnMapsActionLabel.animate(
+      [{ opacity: .35, filter: 'blur(.6px)' }, { opacity: 1, filter: 'blur(0)' }],
+      { duration: 160, easing: 'cubic-bezier(.16, 1, .3, 1)' },
+    );
+  }
+  syncSecondaryActions();
 }
 
 /**
@@ -413,7 +497,10 @@ async function recompute({ fit = false, unfitIds = null, retry = false } = {}) {
   $('btnRetryRoute').hidden = true;
   setMapsButtonState();
   els.totStops.textContent = String(dayStops.length);
-  els.btnUndo.disabled = !store.canUndo();
+  const canUndo = store.canUndo();
+  els.btnUndo.disabled = !canUndo;
+  els.btnUndo.hidden = !canUndo;
+  syncSecondaryActions();
   renderOrigin();
 
   // Optimising needs two points to reorder between. Leaving the button live on
@@ -421,11 +508,14 @@ async function recompute({ fit = false, unfitIds = null, retry = false } = {}) {
   // anything, which is worse than saying so up front.
   els.btnOptimize.disabled = optimizing || routable.length < (store.origin ? 2 : 3);
   els.btnOptimize.title = store.origin ? 'Reorder flexible stops around fixed appointments' : 'Add at least three located stops, or set a starting point';
+  const bare = dayStops.length === 0;
+  els.scheduleActions.hidden = bare;
+  els.btnAddStop.hidden = bare;
+  syncMoveToNow();
   $('mobileTrayCount').textContent = String(store.stops.filter((s) => !s.day).length);
 
   // A key for marks that aren't on screen is noise; so is a ruled empty grid
   // with nothing telling you how to fill it.
-  const bare = dayStops.length === 0;
   els.lineEmpty.hidden = !bare;
   els.legend.hidden = bare;
   $('schedulePane').classList.toggle('is-empty', bare);
@@ -458,7 +548,9 @@ async function recompute({ fit = false, unfitIds = null, retry = false } = {}) {
       fault: conflictIds.size > 0,
     });
     if (conflictIds.size) status(`${conflictIds.size} appointments overlap`, 'error');
-    else status('Ready', 'ok');
+    else if (dayStops.length > routable.length) status('Add a location to finish the route', 'error');
+    else if (links.length) status('Ready to drive', 'ready');
+    else status('', 'ok');
     return;
   }
 
@@ -526,10 +618,11 @@ async function recompute({ fit = false, unfitIds = null, retry = false } = {}) {
   if (conflictIds.size) status(`${conflictIds.size} appointments overlap`, 'error');
   else if (!p.feasible) {
     const lateStop = p.lateId ? store.byId(p.lateId) : null;
-    status(lateStop ? `Can't reach "${lateStop.name || lateStop.address}" in time` : 'Schedule runs late', 'error');
+    status(lateStop ? `Can't reach "${lateStop.name || lateStop.address}" in time` : 'A stop cannot be reached on time', 'error');
   }
   else if (p.estimated) status('Estimated drive times — verify in Maps', 'error');
-  else status('Ready', 'ok');
+  else if (dayStops.length > routable.length) status('Add missing locations to finish the route', 'error');
+  else status('Ready to drive', 'ready');
 
   drawGeometry(routeInput, p.estimated);
 }
@@ -646,11 +739,15 @@ function renderOriginHits(hits) {
   originCursor = -1;
   const box = els.originResults;
   box.textContent = '';
+  els.originAddr.removeAttribute('aria-activedescendant');
+  els.originAddr.setAttribute('aria-expanded', String(hits.length > 0));
   if (!hits.length) { box.hidden = true; return; }
   hits.forEach((h, i) => {
     const b = document.createElement('button');
     b.type = 'button';
     b.className = 'search-hit';
+    b.id = `origin-hit-${i}`;
+    b.setAttribute('role', 'option');
     b.setAttribute('aria-selected', 'false');
     const strong = document.createElement('b');
     strong.textContent = h.name || h.label || '';
@@ -670,6 +767,7 @@ function moveOriginCursor(d) {
     el.setAttribute('aria-selected', i === originCursor ? 'true' : 'false');
     if (i === originCursor) el.scrollIntoView({ block: 'nearest' });
   });
+  els.originAddr.setAttribute('aria-activedescendant', `origin-hit-${originCursor}`);
 }
 
 /** Take a suggestion: it becomes the starting point immediately. */
@@ -680,8 +778,8 @@ function takeOriginHit(i) {
   els.originAddr.value = originPick.label;
   renderOriginHits([]);
   store.setOrigin({ lat: h.lat, lng: h.lng, name: '', address: originPick.label, source: 'manual' });
-  els.originNote.dataset.state = 'ok';
-  els.originNote.textContent = `Saved. Starting from ${originPick.label}.`;
+  clearFieldState(els.originNote, els.originAddr);
+  fieldMessage(els.originNote, `Saved. Starting from ${originPick.label}.`, 'ok');
   els.originClear.hidden = false;
 }
 
@@ -697,6 +795,8 @@ els.originAddr.addEventListener('input', () => {
   clearTimeout(originTimer);
   originAbort?.abort();
   originPick = null;                       // typing invalidates the last pick
+  els.originAddr.removeAttribute('aria-invalid');
+  if (els.originNote.dataset.state) fieldMessage(els.originNote, '', '');
   const q = els.originAddr.value.trim();
   if (q.length < 3) { renderOriginHits([]); return; }
   originTimer = setTimeout(() => searchOrigin(q), 320);
@@ -715,8 +815,8 @@ els.originAddr.addEventListener('keydown', (e) => {
 function openOriginSheet() {
   const o = store.origin;
   els.originAddr.value = o && o.source !== 'geo' ? (o.address || o.name || '') : (o?.address || '');
-  els.originNote.textContent = o ? `Currently ${originLabel(o)}.` : '';
-  els.originNote.dataset.state = '';
+  els.originAddr.removeAttribute('aria-invalid');
+  fieldMessage(els.originNote, o ? `Currently ${originLabel(o)}.` : '', '');
   els.originClear.hidden = !o;
   originPick = null;
   renderOriginHits([]);
@@ -727,22 +827,20 @@ function openOriginSheet() {
 els.btnOrigin.addEventListener('click', openOriginSheet);
 
 els.originUseGeo.addEventListener('click', async () => {
-  els.originNote.dataset.state = '';
-  els.originNote.textContent = 'Finding you…';
+  clearFieldState(els.originNote, els.originAddr);
+  fieldMessage(els.originNote, 'Finding you…');
   els.originUseGeo.disabled = true;
   try {
     const pos = await currentPosition();
     if (!pos) {
-      els.originNote.dataset.state = 'bad';
-      els.originNote.textContent = 'Could not get your location. If the browser blocked it, allow location for this site in the address bar, then try again — or type an address below.';
+      fieldMessage(els.originNote, 'Could not get your location. If the browser blocked it, allow location for this site in the address bar, then try again — or type an address below.', 'bad');
       return;
     }
     const o = await originFromPosition(pos);
     store.setOrigin(o);
     originPick = null;
     els.originAddr.value = o.address || '';
-    els.originNote.dataset.state = 'ok';
-    els.originNote.textContent = `Saved. Starting from ${o.address || originLabel(o)}.`;
+    fieldMessage(els.originNote, `Saved. Starting from ${o.address || originLabel(o)}.`, 'ok');
     els.originClear.hidden = false;
   } finally {
     els.originUseGeo.disabled = false;
@@ -776,12 +874,11 @@ els.originForm.addEventListener('submit', async (e) => {
   }
 
   e.preventDefault();
-  els.originNote.dataset.state = '';
-  els.originNote.textContent = 'Finding that address…';
+  clearFieldState(els.originNote, els.originAddr);
+  fieldMessage(els.originNote, 'Finding that address…');
   const hit = await geo.resolve(typed, {near:map.center?.() || store.origin});
   if (!hit) {
-    els.originNote.dataset.state = 'bad';
-    els.originNote.textContent = 'Could not find that address. Try picking one of the suggestions, or add the city and state.';
+    fieldMessage(els.originNote, 'Could not find that address. Try picking one of the suggestions, or add the city and state.', 'bad', els.originAddr);
     els.originAddr.focus();
     els.originAddr.select();
     return;                                  // sheet stays open, text intact
@@ -883,6 +980,7 @@ function openStop(id) {
   const s = id ? store.byId(id) : stopDraft;
   if (!s) return;
   editingId = id;
+  if (id && s.day === store.day && s.start) setActiveStop(id);
   if (id) stopDraft = null;
   els.stopSheetTitle.textContent = id ? 'Edit stop' : 'New stop';
   els.stopDelete.hidden = !id;
@@ -896,8 +994,8 @@ function openStop(id) {
   els.stopStart.disabled = false;
   els.stopDayHint.textContent = `Scheduled on ${els.dayLabel.textContent}. Leave the time blank to keep it unscheduled.`;
   els.stopPinned.checked = !!s.pinned;
-  els.stopGeoNote.textContent = s.geoStatus === 'ok' ? 'Located.' : s.geoStatus === 'fail' ? 'Address not found.' : '';
-  els.stopGeoNote.dataset.state = s.geoStatus === 'ok' ? 'ok' : s.geoStatus === 'fail' ? 'bad' : '';
+  clearFieldState(els.stopGeoNote, els.stopName, els.stopAddr, els.stopStart, els.stopDwell);
+  fieldMessage(els.stopGeoNote, s.geoStatus === 'ok' ? 'Located.' : s.geoStatus === 'fail' ? 'Address not found. Add a fuller address and save to try again.' : '', s.geoStatus === 'ok' ? 'ok' : s.geoStatus === 'fail' ? 'bad' : '');
   els.stopSheet.showModal();
   setTimeout(() => els.stopName.focus(), 30);
 }
@@ -910,15 +1008,14 @@ els.stopForm.addEventListener('submit', (e) => {
   const addr = els.stopAddr.value.trim();
   const start = els.stopStart.value;
   const dwell = Number(els.stopDwell.value);
+  clearFieldState(els.stopGeoNote, els.stopName, els.stopAddr, els.stopStart, els.stopDwell);
   if (!name && !addr) {
-    els.stopGeoNote.textContent = 'Add a name or address before saving.';
-    els.stopGeoNote.dataset.state = 'bad';
+    fieldMessage(els.stopGeoNote, 'Add a name or address before saving.', 'bad', els.stopName, els.stopAddr);
     els.stopName.focus();
     return;
   }
   if (start && toMin(start) + dwell > 24 * 60) {
-    els.stopGeoNote.textContent = 'This visit extends past midnight. Choose an earlier time or a shorter visit.';
-    els.stopGeoNote.dataset.state = 'bad';
+    fieldMessage(els.stopGeoNote, 'This visit extends past midnight. Choose an earlier time or a shorter visit.', 'bad', els.stopStart, els.stopDwell);
     els.stopStart.focus();
     return;
   }
@@ -934,10 +1031,16 @@ els.stopForm.addEventListener('submit', (e) => {
   };
   const id = editingId || store.add(patch).id;
   if (editingId) store.update(id, patch);
+  if (start) setActiveStop(id);
+  else if (activeStopId === id) setActiveStop(null);
   els.stopSheet.close('ok');
   if (start) setView('schedule');
   if (addr && (changed || s.geoStatus !== 'ok')) locateStop(id, addr);
 });
+
+for (const input of [els.stopName, els.stopAddr, els.stopStart, els.stopDwell]) {
+  input.addEventListener('input', () => clearFieldState(els.stopGeoNote, els.stopName, els.stopAddr, els.stopStart, els.stopDwell));
+}
 
 async function locateStop(id, address) {
   const hit = await geo.resolve(address, {near:map.center?.() || store.origin});
@@ -963,6 +1066,33 @@ els.stopDelete.addEventListener('click', () => {
 
 // -- actions ---------------------------------------------------------------
 els.btnOptimize.addEventListener('click', optimise);
+
+els.btnMoveToNow.addEventListener('click', () => {
+  // The date can change while a long-lived tab is sitting in the background.
+  // Re-check at the gesture boundary so a stale button can never shift
+  // yesterday's plan using today's clock.
+  if (!syncMoveToNow()) return;
+  const scheduled = store.scheduled(store.day);
+  if (!scheduled.length) return;
+
+  const target = nextQuarterHour();
+  if (target >= 24 * 60) {
+    toast('There is no quarter-hour left in today.', 'warn');
+    return;
+  }
+
+  const earliest = Math.min(...scheduled.map((s) => toMin(s.start)));
+  const result = store.shiftScheduled(store.day, target - earliest);
+  if (!result.applied) {
+    toast('The schedule is already aligned to now.', 'info');
+    return;
+  }
+
+  const direction = result.applied > 0 ? 'later' : 'earlier';
+  const amount = Math.abs(result.applied);
+  const suffix = result.clamped ? ' as far as today allows' : '';
+  toast(`Moved ${result.count} stop${result.count === 1 ? '' : 's'} ${amount} min ${direction}${suffix}.`, 'ok');
+});
 
 els.btnUndo.addEventListener('click', () => {
   if (store.undo()) toast('Reverted.', 'info');
@@ -1016,7 +1146,12 @@ els.btnCopyLegs.addEventListener('click', async () => {
 });
 
 function setView(view) {
-  $('app').dataset.view = view;
+  const previous = els.app.dataset.view;
+  const order = { schedule: 0, map: 1, places: 2 };
+  const direction = previous && order[view] !== order[previous]
+    ? Math.sign(order[view] - order[previous])
+    : 0;
+  els.app.dataset.view = view;
   document.querySelectorAll('.view-switch [data-view]').forEach((button) => {
     button.setAttribute('aria-pressed', String(button.dataset.view === view));
   });
@@ -1024,6 +1159,15 @@ function setView(view) {
     schedule.cal.updateSize();
     schedule.scheduleDraw();
     map.resize();
+    if (view === 'map' && activeStopId) map.reveal(store.byId(activeStopId));
+    if (direction && MOBILE_LAYOUT.matches && !REDUCED.matches) {
+      const target = view === 'schedule' ? $('schedulePane') : view === 'map' ? $('mapPane') : $('tray');
+      viewAnimation?.cancel();
+      viewAnimation = target.animate(directionalFrames(direction), {
+        duration: 220,
+        easing: 'cubic-bezier(.16, 1, .3, 1)',
+      });
+    }
   });
 }
 document.querySelectorAll('.view-switch [data-view]').forEach((b) => {
@@ -1033,16 +1177,27 @@ document.querySelectorAll('.view-switch [data-view]').forEach((b) => {
 function shiftDay(delta) {
   const [y, m, d] = store.day.split('-').map(Number);
   const dt = new Date(y, m - 1, d + delta);
-  store.setDay(todayISO(dt));
+  goToDay(todayISO(dt), Math.sign(delta));
+}
+function goToDay(day, direction = Math.sign(day.localeCompare(store.day))) {
+  if (!day || day === store.day) return;
+  pendingDayDirection = direction;
+  store.setDay(day);
 }
 els.dayPrev.addEventListener('click', () => shiftDay(-1));
 els.dayNext.addEventListener('click', () => shiftDay(1));
-els.dayToday.addEventListener('click', () => store.setDay(todayISO()));
+els.dayToday.addEventListener('click', () => goToDay(todayISO()));
 els.dayPicker.addEventListener('change', () => {
-  if (/^\d{4}-\d{2}-\d{2}$/.test(els.dayPicker.value)) store.setDay(els.dayPicker.value);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(els.dayPicker.value)) goToDay(els.dayPicker.value);
+});
+
+const shortcutHelp = document.querySelector('.shortcut-help');
+document.addEventListener('click', (e) => {
+  if (shortcutHelp?.open && !shortcutHelp.contains(e.target)) shortcutHelp.open = false;
 });
 
 document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && shortcutHelp?.open) { shortcutHelp.open = false; return; }
   if (document.querySelector('dialog[open]') || e.target.closest('input, textarea, select, [contenteditable="true"]')) return;
   if ((e.metaKey || e.ctrlKey) && e.key === 'z') { e.preventDefault(); if (store.undo()) toast('Reverted.', 'info'); }
   else if (e.key === 'o' && !e.metaKey && !e.ctrlKey) { e.preventDefault(); optimise(); }
@@ -1054,6 +1209,9 @@ document.addEventListener('keydown', (e) => {
 // -- the one place everything redraws from ---------------------------------
 store.addEventListener('change', (e) => {
   ++dataRevision;
+  const dayDirection = e.detail?.dayChanged ? pendingDayDirection : 0;
+  if (e.detail?.dayChanged) pendingDayDirection = 0;
+  if (activeStopId && (e.detail?.dayChanged || !store.byId(activeStopId))) setActiveStop(null);
   if (!optimizing) els.delta.hidden = true;
   if (els.mapsSheet.open) els.mapsSheet.close();
   document.querySelector('.local-note').textContent = store.saveFailed
@@ -1062,9 +1220,28 @@ store.addEventListener('change', (e) => {
   tray.render();
   schedule.refresh();
   recompute({ fit: !!e.detail?.dayChanged });
+  if (dayDirection) requestAnimationFrame(() => animateDayChange(dayDirection));
 });
 
 window.addEventListener('resize', () => { map.resize(); schedule.scheduleDraw(); });
+
+let rolloverTimer = null;
+function scheduleDateRollover() {
+  clearTimeout(rolloverTimer);
+  const now = new Date();
+  const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+  rolloverTimer = setTimeout(() => {
+    syncMoveToNow();
+    scheduleDateRollover();
+  }, Math.max(1000, midnight.getTime() - now.getTime() + 250));
+}
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) {
+    syncMoveToNow();
+    scheduleDateRollover();
+  }
+});
+window.addEventListener('focus', syncMoveToNow);
 
 renderLegend({});
 setView('schedule');
@@ -1073,6 +1250,7 @@ tray.render();
 schedule.refresh();
 recompute();            // never gated on the map
 tray.geocodePending();
+scheduleDateRollover();
 
 // Offer the current location as the starting point, once, without blocking
 // startup. Refusal is fine: the app then behaves exactly as it did before.

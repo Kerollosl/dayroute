@@ -21,6 +21,13 @@ export const toMin = (hm) => {
   return (h || 0) * 60 + (m || 0);
 };
 
+/** The next quarter-hour at or after the current local clock time. */
+export const nextQuarterHour = (now = new Date()) => {
+  const minutes = now.getHours() * 60 + now.getMinutes()
+    + now.getSeconds() / 60 + now.getMilliseconds() / 60000;
+  return Math.ceil(minutes / 15) * 15;
+};
+
 /** Seconds -> "H:MM". Used for every drive figure on the surface. */
 export const fmtDur = (sec) => {
   if (!Number.isFinite(sec) || sec <= 0) return '0:00';
@@ -259,5 +266,29 @@ export class Store extends EventTarget {
   /** Move a siding onto the day at a given start, or back to the sidings. */
   schedule(id, day, start) { return this.update(id, { day, start }); }
   unschedule(id) { return this.update(id, { day: null, start: null }); }
+
+  /** Shift every scheduled stop on a day together as one undoable action. */
+  shiftScheduled(day, delta) {
+    const scheduled = this.scheduled(day);
+    if (!scheduled.length || !Number.isFinite(delta) || delta === 0) {
+      return { count: scheduled.length, applied: 0, clamped: false };
+    }
+
+    const starts = scheduled.map((s) => toMin(s.start));
+    const minDelta = -Math.min(...starts);
+    const maxDelta = Math.min(...scheduled.map((s, i) => {
+      const dwell = Math.max(1, Number.isFinite(s.dwell) ? s.dwell : 30);
+      return Math.min(1439, 1440 - dwell) - starts[i];
+    }));
+    const applied = Math.max(minDelta, Math.min(delta, maxDelta));
+    if (!applied) return { count: scheduled.length, applied: 0, clamped: applied !== delta };
+
+    this.batch(() => {
+      scheduled.forEach((s, i) => {
+        this.update(s.id, { start: toHM(starts[i] + applied) }, { checkpoint: false, silent: true });
+      });
+    });
+    return { count: scheduled.length, applied, clamped: applied !== delta };
+  }
 }
 

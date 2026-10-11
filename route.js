@@ -11,6 +11,21 @@ const MIN_GAP_MS = 1050;
 const REQUEST_TIMEOUT_MS = 10000;
 const DAY_START_MIN = 8 * 60;
 const DAY_END_MIN = 20 * 60;
+
+/**
+ * Keep the optimizer's default 8 PM boundary for an ordinary day, but extend
+ * it through any stops the user explicitly scheduled later. A declared 11 PM
+ * appointment is part of the day, not evidence that the route arrived late.
+ */
+export function scheduledDayEnd(stops, floor = DAY_END_MIN) {
+  let end = floor;
+  for (const s of stops) {
+    if (!Number.isFinite(s?.startMin)) continue;
+    const dwell = Number.isFinite(s.dwell) ? Math.max(0, s.dwell) : 30;
+    end = Math.max(end, s.startMin + dwell);
+  }
+  return Math.min(24 * 60, end);
+}
 const FALLBACK_MPH = 32;
 
 // -- polite serial queue, shared by /table and /route ----------------------
@@ -151,6 +166,29 @@ const MI = (m, stops, i) => {
   }
   throw new Error('Stop is missing its routing matrix index');
 };
+
+/**
+ * The first card's clock is its arrival time. When an origin is present, start
+ * the route early enough to cover that inbound leg instead of adding the drive
+ * after the card has already begun.
+ */
+export function scheduledDayStart(stops, m = null) {
+  let first = -1;
+  for (let i = 0; i < stops.length; i++) {
+    const s = stops[i];
+    if (s?.origin || !Number.isFinite(s?.startMin)) continue;
+    if (first < 0 || s.startMin < stops[first].startMin) first = i;
+  }
+  if (first < 0) return DAY_START_MIN;
+
+  const start = stops[first].startMin;
+  const origin = stops.findIndex((s) => s?.origin);
+  if (origin < 0 || !m) return start;
+
+  const seconds = dur(m, MI(m, stops, origin), MI(m, stops, first));
+  if (!Number.isFinite(seconds)) return start;
+  return Math.max(0, start - Math.ceil(seconds / 60));
+}
 
 /** Total driving seconds for an ordered list of stop indices. */
 function driveTime(order, stops, m) {

@@ -8,7 +8,7 @@
 <meta name="theme-color" content="#F5F5F7">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230B7A4B'/%3E%3Cpath d='M8 22 Q16 22 16 16 T24 10' fill='none' stroke='%23fff' stroke-width='2.5' stroke-linecap='round'/%3E%3Ccircle cx='8' cy='22' r='2.6' fill='%23fff'/%3E%3Ccircle cx='24' cy='10' r='2.6' fill='%23fff'/%3E%3C/svg%3E">
 <link href="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
-<link href="style.css" rel="stylesheet">
+<link href="style.css?v=2026-09-13-polish-6" rel="stylesheet">
 </head>
 <body>
 <!--
@@ -29,7 +29,7 @@ FORM: Native application chrome. Plain language, sentence case, generous spacing
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict,
 DESIGN.md, and every shipping raster carrying its provenance.
 -->
-<div class="app" id="app">
+<div class="app" id="app" data-route-state="idle">
 
   <aside class="rail" id="rail">
     <header class="brand">
@@ -43,11 +43,11 @@ DESIGN.md, and every shipping raster carrying its provenance.
     </header>
 
     <nav class="daynav" aria-label="Day">
-      <button class="daynav-btn" id="dayPrev" aria-label="Previous day">
+      <button class="daynav-btn" id="dayPrev" aria-label="Previous day" aria-keyshortcuts="[" title="Previous day ([)">
         <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3 L5 8 L10 13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
       <label class="daynav-date"><span id="dayLabel" aria-live="polite">—</span><input type="date" id="dayPicker" aria-label="Choose day"></label>
-      <button class="daynav-btn" id="dayNext" aria-label="Next day">
+      <button class="daynav-btn" id="dayNext" aria-label="Next day" aria-keyshortcuts="]" title="Next day (])">
         <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3 L11 8 L6 13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
       <button class="daynav-today" id="dayToday">Today</button>
@@ -87,16 +87,21 @@ DESIGN.md, and every shipping raster carrying its provenance.
     </div>
 
     <div class="rail-actions">
-      <button class="btn btn--primary btn--wide" id="btnOptimize">
+      <button class="btn btn--primary btn--wide" id="btnOptimize" aria-keyshortcuts="o" title="Optimize route (O)">
         <svg viewBox="0 0 16 16" aria-hidden="true" class="btn-ico"><path d="M2 11 Q7 11 8 8 T14 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="2.5" cy="11" r="1.8" fill="currentColor"/><circle cx="13.5" cy="5" r="1.8" fill="currentColor"/></svg>
         <span>Optimize</span>
       </button>
-      <div class="rail-actions--split">
-        <button class="btn btn--tonal" id="btnMapsAction">
+      <div class="rail-actions--split" id="routeSecondaryActions" hidden>
+        <button class="btn btn--tonal" id="btnMapsAction" hidden>
           <span id="btnMapsActionLabel">Copy link</span>
         </button>
-        <button class="btn btn--ghost" id="btnUndo" disabled>Undo</button>
+        <button class="btn btn--ghost" id="btnUndo" aria-keyshortcuts="Meta+z Control+z" hidden>Undo</button>
       </div>
+    </div>
+
+    <div class="route-status" id="routeStatus" hidden>
+      <span class="status" id="netStatus" role="status" aria-live="polite" aria-atomic="true"><i class="status-dot"></i><span id="netStatusText">Ready</span></span>
+      <button class="btn btn--ghost" type="button" id="btnRetryRoute" hidden>Retry routing</button>
     </div>
     <p class="rail-note" id="mapsNote" hidden></p>
 
@@ -107,21 +112,36 @@ DESIGN.md, and every shipping raster carrying its provenance.
       </div>
       <div class="search">
         <svg class="search-ico" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10.5 10.5 L14 14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-        <input type="text" id="searchInput" placeholder="Add a place or address" autocomplete="off" spellcheck="false" aria-label="Add a place or address">
-        <div class="search-results" id="searchResults" hidden></div>
+        <input type="text" id="searchInput" placeholder="Add a place or address" autocomplete="off" spellcheck="false" aria-label="Add a place or address" role="combobox" aria-autocomplete="list" aria-controls="searchResults" aria-expanded="false" aria-keyshortcuts="/">
+        <p class="search-message" id="searchStatus" role="status" aria-live="polite" aria-atomic="true" hidden></p>
+        <div class="search-results" id="searchResults" role="listbox" hidden></div>
       </div>
       <div class="tray-list" id="trayList"></div>
-      <button class="btn btn--tonal btn--wide" type="button" id="btnManualStop">Add manually</button>
-      <button class="btn btn--ghost btn--wide" id="btnPaste">Paste a list</button>
+      <div class="tray-actions" aria-label="More ways to add stops">
+        <button class="btn btn--ghost" type="button" id="btnManualStop">Add manually</button>
+        <button class="btn btn--ghost" type="button" id="btnPaste">Paste a list</button>
+      </div>
     </section>
 
-    <footer class="rail-foot">
-      <span class="status" id="netStatus" role="status"><i class="status-dot"></i><span id="netStatusText">Ready</span></span>
-      <button class="btn btn--ghost" type="button" id="btnRetryRoute" hidden>Retry routing</button>
+    <div class="rail-foot tray-actions" role="group" aria-label="Day backups">
       <button type="button" class="btn btn--ghost" id="btnExportDay">Export day</button>
       <button type="button" class="btn btn--ghost" id="btnImportDay">Import day</button>
       <input type="file" id="importDay" accept="application/json,.json" hidden>
+    </div>
+
+    <footer class="rail-foot">
       <span class="local-note">Saved on this browser</span>
+      <details class="shortcut-help">
+        <summary>Shortcuts</summary>
+        <div class="shortcut-panel">
+          <span><kbd>O</kbd> Optimize</span>
+          <span><kbd>/</kbd> Find a place</span>
+          <span><kbd>[</kbd><kbd>]</kbd> Change day</span>
+          <span><kbd>↑</kbd><kbd>↓</kbd> Move a focused stop</span>
+          <span><kbd>Shift</kbd> + arrows moves 5 min</span>
+          <span><kbd>⌘</kbd><kbd>Z</kbd> Undo</span>
+        </div>
+      </details>
     </footer>
   </aside>
 
@@ -134,9 +154,13 @@ DESIGN.md, and every shipping raster carrying its provenance.
   <main class="line-pane" id="schedulePane">
     <div class="pane-head">
       <h2 class="pane-title">Schedule</h2>
-      <button type="button" class="btn btn--tonal" id="btnAddStop">Add stop</button>
+      <div class="pane-actions" id="scheduleActions" hidden>
+        <button type="button" class="btn btn--ghost" id="btnMoveToNow" title="Shift all scheduled stops to the next quarter hour" hidden>Move to now</button>
+        <button type="button" class="btn btn--tonal" id="btnAddStop" hidden>Add stop</button>
+      </div>
       <div class="legend" id="legend"></div>
     </div>
+    <p class="sr-only" id="scheduleKeyboardHelp">Press Enter to edit a focused stop. Use the up and down arrows to move it 15 minutes, or hold Shift to move it 5 minutes.</p>
     <div class="line-body">
       <div class="line-grid" id="calendar"></div>
       <svg class="line-overlay" id="lineOverlay" aria-hidden="true"></svg>
@@ -155,19 +179,19 @@ DESIGN.md, and every shipping raster carrying its provenance.
 
 </div>
 
-<dialog class="sheet" id="originSheet">
+<dialog class="sheet" id="originSheet" aria-labelledby="originTitle">
   <form method="dialog" class="sheet-inner" id="originForm">
-    <h3 class="sheet-title">Starting point</h3>
+    <h3 class="sheet-title" id="originTitle">Starting point</h3>
     <p class="sheet-help">Where the day begins. The route, the drive times and the Maps link all start here.</p>
     <button type="button" class="btn btn--tonal btn--wide" id="originUseGeo">Use my current location</button>
     <label class="field">
       <span>Or search for an address</span>
       <div class="field-search">
-        <input type="text" id="originAddr" autocomplete="off" spellcheck="false" placeholder="Start typing a place or address">
-        <div class="search-results" id="originResults" hidden></div>
+        <input type="text" id="originAddr" autocomplete="off" spellcheck="false" placeholder="Start typing a place or address" role="combobox" aria-autocomplete="list" aria-controls="originResults" aria-expanded="false" aria-describedby="originNote">
+        <div class="search-results" id="originResults" role="listbox" hidden></div>
       </div>
     </label>
-    <p class="field-note" id="originNote"></p>
+    <p class="field-note" id="originNote" aria-live="polite" aria-atomic="true"></p>
     <div class="sheet-actions">
       <button class="btn btn--danger" id="originClear" type="button">Clear</button>
       <button type="button" class="btn btn--ghost" data-close="cancel">Cancel</button>
@@ -176,11 +200,15 @@ DESIGN.md, and every shipping raster carrying its provenance.
   </form>
 </dialog>
 
-<dialog class="sheet" id="pasteSheet">
-  <form method="dialog" class="sheet-inner">
-    <h3 class="sheet-title">Paste a list</h3>
-    <p class="sheet-help">One stop per line — <code>Name, Address</code> or just an address. CSV headers are detected.</p>
-    <textarea id="pasteBox" rows="12" spellcheck="false" placeholder="Rays Hell Burger, 1725 Wilson Blvd, Arlington VA&#10;Great Falls Park&#10;2001 Jefferson Davis Hwy, Arlington VA"></textarea>
+<dialog class="sheet" id="pasteSheet" aria-labelledby="pasteTitle">
+  <form method="dialog" class="sheet-inner" id="pasteForm">
+    <h3 class="sheet-title" id="pasteTitle">Paste a list</h3>
+    <p class="sheet-help" id="pasteHelp">One stop per line — <code>Name, Address</code> or just an address. CSV headers are detected.</p>
+    <label class="field">
+      <span>Stops to add</span>
+      <textarea id="pasteBox" rows="12" spellcheck="false" aria-describedby="pasteHelp pasteNote" placeholder="Rays Hell Burger, 1725 Wilson Blvd, Arlington VA&#10;Great Falls Park&#10;2001 Jefferson Davis Hwy, Arlington VA"></textarea>
+    </label>
+    <p class="field-note" id="pasteNote" aria-live="polite" aria-atomic="true"></p>
     <div class="sheet-actions">
       <button type="button" class="btn btn--ghost" data-close="cancel">Cancel</button>
       <button class="btn btn--primary" id="pasteConfirm" value="ok">Add stops</button>
@@ -188,18 +216,18 @@ DESIGN.md, and every shipping raster carrying its provenance.
   </form>
 </dialog>
 
-<dialog class="sheet" id="stopSheet">
+<dialog class="sheet" id="stopSheet" aria-labelledby="stopSheetTitle">
   <form method="dialog" class="sheet-inner" id="stopForm">
     <h3 class="sheet-title" id="stopSheetTitle">Stop</h3>
-    <label class="field"><span>Name</span><input type="text" id="stopName" autocomplete="off"></label>
-    <label class="field"><span>Address</span><input type="text" id="stopAddr" autocomplete="off"></label>
+    <label class="field"><span>Name</span><input type="text" id="stopName" autocomplete="off" aria-describedby="stopGeoNote"></label>
+    <label class="field"><span>Address</span><input type="text" id="stopAddr" autocomplete="off" aria-describedby="stopGeoNote"></label>
     <div class="field-row">
-      <label class="field"><span>Arrive at</span><input type="time" id="stopStart" step="60"></label>
-      <label class="field"><span>Time here (min)</span><input type="number" id="stopDwell" min="5" max="720" step="5" value="30" required></label>
+      <label class="field"><span>Arrive at</span><input type="time" id="stopStart" step="60" aria-describedby="stopGeoNote"></label>
+      <label class="field"><span>Time here (min)</span><input type="number" id="stopDwell" min="5" max="720" step="5" value="30" required aria-describedby="stopGeoNote"></label>
     </div>
     <p class="sheet-help" id="stopDayHint">Leave the time blank to keep this stop unscheduled.</p>
     <label class="field field--check"><input type="checkbox" id="stopPinned"><span>Fixed time — the optimizer may not move this</span></label>
-    <p class="field-note" id="stopGeoNote"></p>
+    <p class="field-note" id="stopGeoNote" aria-live="polite" aria-atomic="true"></p>
     <div class="sheet-actions">
       <button class="btn btn--danger" id="stopDelete" type="button">Delete</button>
       <button type="button" class="btn btn--ghost" data-close="cancel">Cancel</button>
@@ -224,7 +252,7 @@ DESIGN.md, and every shipping raster carrying its provenance.
 
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script type="module" src="app.js"></script>
+<script type="module" src="app.js?v=2026-09-13-polish-6"></script>
 </body>
 </html>
 
