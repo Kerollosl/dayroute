@@ -53,9 +53,9 @@ A plain travelling-salesman optimizer treats every stop as reorderable, which is
 
 ## Evidence on Hand
 
-- `Github-Repos/gcal-plus/` — the user's own deployed Apps Script calendar tool. Code donor for the FullCalendar configuration, its debugged CSS overrides, multi-select batch drag, and the pack-back-to-back logic. Not a host; this product shares no runtime with it.
-- `Chrome Extensions/vacation-map-plotter/index.html` — the user's CSV → geocode → pin → sidebar-sync loop. Shape is reusable; two known bugs in it are not.
-- `Not on Github/beli-restaurants/all_restaurants.csv` — 216 real rows of Name + Address, and `dmv_places.csv` — 103 more. Real test material for the paste-a-list path. Neither has coordinates.
+- `projects/gcal-plus/` — the user's own deployed Apps Script calendar tool. Code donor for the FullCalendar configuration, its debugged CSS overrides, multi-select batch drag, and the pack-back-to-back logic. Not a host; this product shares no runtime with it.
+- `extensions/vacation-map-plotter/index.html` — the user's CSV → geocode → pin → sidebar-sync loop. Shape is reusable; two known bugs in it are not.
+- `beli-restaurants/all_restaurants.csv` (no longer on disk; was under the old `Not on Github/` folder) — 216 real rows of Name + Address, and `dmv_places.csv` — 103 more. Real test material for the paste-a-list path. Neither has coordinates.
 - No brand assets, no logo, no existing visual identity, no prior copy. Nothing to preserve.
 
 ## Product Principles
