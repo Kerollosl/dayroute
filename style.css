@@ -611,6 +611,14 @@ kbd {
 }
 @container ev (max-width: 190px) {
   .ev-drive { display: none; }
+  /* A fault badge beside the name left a half-width card with ~2 characters of
+     name ("Ray' s…"). Let the badge drop to its own row instead; .ev-top keeps
+     flex: none, it just wraps. */
+  .ev-top { flex-wrap: wrap; row-gap: 2px; }
+  .ev-name { flex: 1 1 calc(100% - 24px); min-width: 0; }
+  /* The wrapped badge costs a row; give it back from the name so the time
+     line is never the thing that gets clipped. Full name stays in the title. */
+  .fc .fc-v-event.is-unfit .ev-name { -webkit-line-clamp: 1; }
 }
 .ev-badge {
   font-size: var(--fs-1); font-weight: 590; line-height: 1;

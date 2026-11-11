@@ -618,7 +618,7 @@ async function recompute({ fit = false, unfitIds = null, retry = false } = {}) {
   if (conflictIds.size) status(`${conflictIds.size} appointments overlap`, 'error');
   else if (!p.feasible) {
     const lateStop = p.lateId ? store.byId(p.lateId) : null;
-    status(lateStop ? `Can't reach "${lateStop.name || lateStop.address}" in time` : 'A stop cannot be reached on time', 'error');
+    status(lateStop ? `Can't reach "${lateStop.name || lateStop.address}" in time. Try Optimize, or move it later.` : 'A stop cannot be reached on time. Try Optimize, or move one later.', 'error');
   }
   else if (p.estimated) status('Estimated drive times — verify in Maps', 'error');
   else if (dayStops.length > routable.length) status('Add missing locations to finish the route', 'error');
